@@ -1,5 +1,14 @@
 # ---------- DRIVE project .gitignore ----------
 
+# Local-only reference materials (stay on disk, not published in repo)
+DRIVE_Project_Handover_and_AI_Agent_Guide.md
+ism_project_implementation_plans.md
+ISM.pdf
+ISM PPT.pdf
+dataset_overview_backblaze_slide.html
+methodology.png
+methodology.svg
+
 # Raw and derived data -- never commit datasets (large, and source stays unchanged)
 data/raw/
 data/interim/
