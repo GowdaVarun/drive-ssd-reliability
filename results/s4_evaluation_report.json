@@ -1,0 +1,42 @@
+{
+  "config": {
+    "decision_dates": [
+      "2019-01-01",
+      "2019-04-01",
+      "2019-07-01",
+      "2019-10-01"
+    ],
+    "budgets_pct": [
+      5,
+      10,
+      15,
+      20
+    ],
+    "weights": [
+      0.7,
+      0.5,
+      0.3
+    ],
+    "random_seeds": 100,
+    "seed_list": "0..99",
+    "lift_definition": "captured failure share / budget share = (|S\u2229F| / |F|) / (K/N)"
+  },
+  "runtime_sec": 814.5,
+  "rows": 96,
+  "max_lift_by_strategy": {
+    "infra": 5.451,
+    "model": 3.568,
+    "multi": 6.373
+  },
+  "mean_lift_by_strategy": {
+    "infra": 3.278,
+    "model": 1.892,
+    "multi": 2.509
+  },
+  "random_lift_by_budget": {
+    "5.0": 1.001,
+    "10.0": 1.001,
+    "15.0": 1.001,
+    "20.0": 1.0
+  }
+}

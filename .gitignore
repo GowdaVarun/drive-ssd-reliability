@@ -58,3 +58,7 @@ Thumbs.db
 desktop.ini
 .vscode/
 .idea/
+
+# Re-include published results after the wide data/CSV rules above
+!results/
+!results/**

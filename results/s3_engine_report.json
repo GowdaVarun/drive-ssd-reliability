@@ -1,0 +1,41 @@
+{
+  "decision_date": "2019-07-01",
+  "beta": 730.0,
+  "eligible": 954347,
+  "model_risk": {
+    "A1": 3.8074249384453955e-06,
+    "A2": 1.2529056713786333e-05,
+    "A3": 5.8593210051257576e-05,
+    "A4": 1.4343562803670277e-05,
+    "A5": 1.105949450480969e-05,
+    "A6": 1.4602793357167034e-05,
+    "B1": 5.264215543499539e-06,
+    "B2": 1.762218880754494e-05,
+    "B3": 5.431385161054528e-05,
+    "C1": 4.317037970594252e-05,
+    "C2": 6.965576284048933e-05
+  },
+  "sample_explanations": [
+    "model C2 historical risk 6.966e-05 (norm 1.000)",
+    "model C2 historical risk 6.966e-05 (norm 1.000)",
+    "model C2 historical risk 6.966e-05 (norm 1.000)"
+  ],
+  "total_ranked_rows": 22904328,
+  "variants": [
+    "random",
+    "model",
+    "infra",
+    "multi_w70",
+    "multi_w50",
+    "multi_w30"
+  ],
+  "budgets_pct": [
+    5.0,
+    10.0,
+    15.0,
+    20.0
+  ],
+  "budget_invariants": {
+    "equal_k_across_strategies": true
+  }
+}
