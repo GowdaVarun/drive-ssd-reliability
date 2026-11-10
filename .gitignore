@@ -9,6 +9,9 @@ dataset_overview_backblaze_slide.html
 methodology.png
 methodology.svg
 
+# Dev-local scripts (audit / debug / exploration runners) — stay on disk, not in repo
+scripts/
+
 # Raw and derived data -- never commit datasets (large, and source stays unchanged)
 data/raw/
 data/interim/
