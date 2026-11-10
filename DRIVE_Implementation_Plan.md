@@ -13,19 +13,33 @@ stage below preserves that framing.
 
 ## 0. Roadmap at a glance
 
-| Stage | Name | Output | Depends on | Indicative duration |
-|---|---|---|---|---|
-| S0 | Data collection & dataset decision | Chosen dataset + audit report | — | Weeks 1–3 |
-| S1 | Data pipeline | Cleaned data, drive histories, exposure | S0 | Weeks 3–5 |
-| S2 | Historical failure analytics | Model/infrastructure risk tables | S1 | Weeks 5–7 |
-| S3 | Maintenance decision engine | 4 strategies + rankings + explanations | S2 | Weeks 7–9 |
-| S4 | Chronological evaluation | Coverage/precision/lift tables across budgets | S3 | Weeks 9–11 |
-| S5 | Benchmarking vs existing approaches | Novelty evidence: concept matrix + empirical baselines | S4 | Weeks 11–13 |
-| S6 | Dashboard & final results | Streamlit dashboard matching experiment outputs | S4 (S5 for comparison page) | Weeks 12–14 |
-| S7 | Research paper draft | Full manuscript + reproducibility package | S5, S6 | Weeks 13–16 |
+**Status legend:** ✅ done · 🚧 in progress · ⬜ not started
+
+| Stage | Name | Output | Depends on | Indicative duration | Status |
+|---|---|---|---|---|---|
+| S0 | Data collection & dataset decision | Chosen dataset + audit report | — | Weeks 1–3 | ✅ done |
+| S1 | Data pipeline | Cleaned data, drive histories, exposure | S0 | Weeks 3–5 | ✅ done |
+| S2 | Historical failure analytics | Model/infrastructure risk tables | S1 | Weeks 5–7 | ✅ done |
+| S3 | Maintenance decision engine | 4 strategies + rankings + explanations | S2 | Weeks 7–9 | ✅ done |
+| S4 | Chronological evaluation | Coverage/precision/lift tables across budgets | S3 | Weeks 9–11 | ✅ done |
+| S5 | Benchmarking vs existing approaches | Novelty evidence: concept matrix + empirical baselines | S4 | Weeks 11–13 | ⬜ not started |
+| S6 | Dashboard & final results | Streamlit dashboard matching experiment outputs | S4 (S5 for comparison page) | Weeks 12–14 | ⬜ unblocked (S4 outputs exist) |
+| S7 | Research paper draft | Full manuscript + reproducibility package | S5, S6 | Weeks 13–16 | ⬜ not started |
 
 Timeline is week-relative (≈16 weeks); compress/stretch to the actual semester calendar.
-Do not start S6 UI work before S4 outputs exist (handover §17, mistake #14).
+Do not start S6 UI work before S4 outputs exist (handover §17, mistake #14). — *S4
+outputs exist as of commit `7166eb2`; S6 is now unblocked.*
+
+### Implementation status log (update after each stage)
+
+| Commit | Date | Stage(s) | What landed |
+|---|---|---|---|
+| `7484920` | — (first push) | S0–S2 | Dataset gate passed; ingestion + preprocessing + analytics modules; notebooks/docs/tests |
+| `7166eb2` | — | S3–S4 | `decision_engine/` + `evaluation/`; S3 ranked lists; S4 96-row experiment; `results/` CSV+JSON exports |
+
+**Codebase state:** 49/49 unit tests passing (S1–S4 modules); `scripts/` runners and
+`data/` layers stay local per repo policy; every S4 number in `results/` traces to
+`s4_results.parquet`.
 
 ---
 
@@ -93,6 +107,15 @@ smoothing to be meaningful.
 **Deliverables:** raw data (unchanged), audit notebook, one-page dataset decision memo
 with the Backblaze role verdict.
 
+> **STATUS — ✅ DONE.** Alibaba confirmed PRIMARY with real numbers: 18,387 failure
+> events over 8 quarters, 11 models, 0% missing rack/node, files join. Audit notebook
+> (`01_dataset_audit.ipynb`), decision memo, and anomaly register delivered. Key
+> corrections made early: canonical drive key is `(model, disk_id)` (disk_id
+> namespaces repeat across models → 965,495 unique drives); static-deployment
+> exposure model documented (730-day window 2018-01-01→2019-12-31). Backblaze role:
+> recency audit still pending = open team action item (option 2 gating). Tianchi
+> 95044/128972 registered as optional, non-blocking enhancements.
+
 ---
 
 ## Stage S1 — Data pipeline
@@ -112,6 +135,12 @@ with the Backblaze role verdict.
 **Exit condition:** Reproducible cleaned data + drive-level summary + failure-event
 table + exposure table + data-quality report. Raw data untouched.
 
+> **STATUS — ✅ DONE.** `src/drive/ingestion/` (validated loaders with schema
+> contracts, opt-in parquet cache, fail-fast `DataQualityError`) and
+> `src/drive/preprocessing/` (`identify_ssds`, `build_drive_master` → 965,495 drives /
+> 18,387 failed, `unknown_location_policy`, exposure + `eligible_at`). Exit condition
+> met; raw data untouched.
+
 ---
 
 ## Stage S2 — Historical failure analytics
@@ -129,6 +158,13 @@ table + exposure table + data-quality report. Raw data untouched.
 4. Trend summaries + visualisations for later reuse in the dashboard and paper.
 
 **Exit condition:** Group statistics reproducible from cleaned data by a second person.
+
+> **STATUS — ✅ DONE.** `src/drive/analytics/rates.py`: Gamma-Poisson shrinkage
+> λ̂ = (k + β·θ_parent)/(E + β) with dual exposure variants and trend tables. Real
+> findings: model AFR spread 0.13%–2.67% (label all AFRs *static-assumption
+> annualized*); sensitivity verdicts PASSED — rack rank stability ρ ≥ 0.99 across
+> prior grid β ∈ {365, 730, 3650}, ρ = 0.92 across exposure variants. Exit condition
+> met (numbers regenerate from runners over cached parquet layers).
 
 ---
 
@@ -151,6 +187,15 @@ table + exposure table + data-quality report. Raw data untouched.
 **Exit condition:** All strategies produce comparable ranked lists + explanations under
 the same budget; tie-breaking deterministic.
 
+> **STATUS — ✅ DONE.** `src/drive/decision_engine/` (`history.py`, `strategies.py`):
+> contract implemented exactly as specified, incl. per-selection human-readable
+> explanations; leakage-safe risk tables rebuilt per decision date (priors never
+> reused from S2 globals). Real run at t = 2019-07-01: 954,347 eligible, 6 variants ×
+> 4 budgets, equal-K invariant verified (K = 47,717 / 95,434 / 143,152 / 190,869);
+> ~2.9M ranked rows with explanations in `s3_ranked_lists.parquet`. Design decisions
+> recorded: schema columns always present (unused component = NaN); K = 0 is a valid
+> floor result on tiny pools, not an error. Exit condition met.
+
 ---
 
 ## Stage S4 — Chronological evaluation
@@ -168,6 +213,18 @@ equal budget? (handover Module 5).
 5. No-failure windows → report "undefined", not zero. Show event counts beside metrics.
 
 **Exit condition:** Reproducible comparison tables + plots + saved experiment config.
+
+> **STATUS — ✅ DONE.** `src/drive/evaluation/` (`metrics.py`, `experiment.py`):
+> lift definition fixed once (captured share ÷ budget share); "undefined, not zero"
+> rule for no-failure windows; event counts attached beside every metric. Real
+> experiment (814 s, 4 decision dates × 6 variants × 4 budgets, random = 100 seeds
+> 0..99): **infra-aware best at tight budgets (lift 3.74 @ 5%), multi 30:70 best at
+> 20% (lift 3.02, coverage 60.4%); model-aware weakest of the risk strategies
+> (1.35–2.55); random = 1.00 ± 0.003 (pipeline sanity check); best single cell 6.37×
+> (2019-10-01, 5%).** Saved config in `s4_evaluation_report.json`; headline tables
+> published under `results/` (CSV + JSON, commit `7166eb2`). A S4 test caught a real
+> index-decoupling bug in `build_scores` before it could corrupt results (fixed via
+> identity-preserving left-join). Plots deferred to S6 dashboard; tables ready.
 
 ---
 
@@ -222,6 +279,11 @@ protocol** (same decision dates, eligible population, budgets, metrics):
 **Exit condition:** Benchmark matrix completed + one benchmark-results table that will go
 straight into the paper's experiments section.
 
+> **STATUS — ⬜ NOT STARTED (next up).** S5.1: use the verified citations already
+> collected in S0 notes. S5.2: SMART-data fallback agreed — if Tianchi 95044 daily
+> SMART stays unavailable, evaluate baselines only at decision date 2019-12-31 with
+> last-known snapshot values, clearly labeled.
+
 ---
 
 ## Stage S6 — Dashboard & final results
@@ -240,6 +302,11 @@ straight into the paper's experiments section.
 - Labels say "historical group risk", never "probability this drive will fail".
 
 **Exit condition:** Every dashboard number traced back to an experiment output file.
+
+> **STATUS — ⬜ UNBLOCKED.** The "S4 outputs must exist" precondition is now satisfied
+> (S4 results + reports in `results/`). Pages 1–3 and 5 can be built from S1–S4
+> outputs; Page 4 needs S5 benchmark results for its comparison panel — build S5.1
+> content in parallel or leave the panel stubbed until S5.2 lands.
 
 ---
 
@@ -283,6 +350,24 @@ benchmark-defence questions ("why not deep learning?", "why group risk?").
 
 **Exit condition:** Complete draft internally reviewed against this checklist; every
 number in the paper traceable to an output file.
+
+> **STATUS — ⬜ NOT STARTED.** Blocked on S5 (Results §6 benchmark table). Headline
+> numbers already available from S4 for the abstract placeholder in §S7.1.1.
+
+---
+
+## Current position (as of commit `7166eb2`)
+
+- **Stages complete:** S0 ✅ → S1 ✅ → S2 ✅ → S3 ✅ → S4 ✅ — decision engine built,
+  validated, and evaluated on real data; headline results published in `results/`.
+- **Next stage:** S5 (related-work matrix + SMART-threshold/ML baselines under the
+  exact S3/S4 protocol).
+- **Open team action items:**
+  1. Backblaze recency audit → decides its paper role (S0.3 option 2 = likely drop-or-supplement).
+  2. Optional: Tianchi 95044 registration for daily-SMART exposure upgrade / ML baseline features.
+- **Quality gates maintained:** 49/49 unit tests; raw data untouched; all published
+  numbers reproducible via `scripts/` runners over cached parquet layers; honest-scoping
+  labels ("static-assumption annualized", "undefined" not zero) enforced in code.
 
 ---
 
