@@ -2,10 +2,9 @@
 pandas>=3.0
 numpy>=2.0
 pyarrow>=26.0        # parquet ingestion cache
-# testing
-pytest>=9.0
-# stages S2+ (planned; install as stages start)
-# scipy>=1.11
-# statsmodels>=0.14
-# streamlit>=1.40
-# plotly>=5.20
+pytest>=9.0          # testing
+scipy>=1.11          # S5 benchmarks (rank stats)
+scikit-learn>=1.3    # S5 ML baselines
+lightgbm>=4.0        # S5 GBDT baseline
+# streamlit>=1.40    # S6 dashboard (built locally; unpublished pending redesign)
+# plotly>=5.20       # S6 charts (same status)
