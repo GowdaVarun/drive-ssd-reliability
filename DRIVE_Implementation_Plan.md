@@ -22,8 +22,8 @@ stage below preserves that framing.
 | S2 | Historical failure analytics | Model/infrastructure risk tables | S1 | Weeks 5–7 | ✅ done |
 | S3 | Maintenance decision engine | 4 strategies + rankings + explanations | S2 | Weeks 7–9 | ✅ done |
 | S4 | Chronological evaluation | Coverage/precision/lift tables across budgets | S3 | Weeks 9–11 | ✅ done |
-| S5 | Benchmarking vs existing approaches | Novelty evidence: concept matrix + empirical baselines | S4 | Weeks 11–13 | ⬜ not started |
-| S6 | Dashboard & final results | Streamlit dashboard matching experiment outputs | S4 (S5 for comparison page) | Weeks 12–14 | ⬜ unblocked (S4 outputs exist) |
+| S5 | Benchmarking vs existing approaches | Novelty evidence: concept matrix + empirical baselines | S4 | Weeks 11–13 | ✅ done |
+| S6 | Dashboard & final results | Streamlit dashboard matching experiment outputs | S4 (S5 for comparison page) | Weeks 12–14 | ⬜ unblocked (S4+S5 outputs exist) |
 | S7 | Research paper draft | Full manuscript + reproducibility package | S5, S6 | Weeks 13–16 | ⬜ not started |
 
 Timeline is week-relative (≈16 weeks); compress/stretch to the actual semester calendar.
@@ -36,10 +36,11 @@ outputs exist as of commit `7166eb2`; S6 is now unblocked.*
 |---|---|---|---|
 | `7484920` | — (first push) | S0–S2 | Dataset gate passed; ingestion + preprocessing + analytics modules; notebooks/docs/tests |
 | `7166eb2` | — | S3–S4 | `decision_engine/` + `evaluation/`; S3 ranked lists; S4 96-row experiment; `results/` CSV+JSON exports |
+| `ccd79cc` | — | (docs) | Plan status updated through S4 |
 
-**Codebase state:** 49/49 unit tests passing (S1–S4 modules); `scripts/` runners and
-`data/` layers stay local per repo policy; every S4 number in `results/` traces to
-`s4_results.parquet`.
+**Codebase state:** 55/55 unit tests passing (S1–S5 modules); `scripts/` runners and
+`data/` layers stay local per repo policy; every S4/S5 number in `results/` traces to
+its parquet source.
 
 ---
 
@@ -279,10 +280,37 @@ protocol** (same decision dates, eligible population, budgets, metrics):
 **Exit condition:** Benchmark matrix completed + one benchmark-results table that will go
 straight into the paper's experiments section.
 
-> **STATUS — ⬜ NOT STARTED (next up).** S5.1: use the verified citations already
-> collected in S0 notes. S5.2: SMART-data fallback agreed — if Tianchi 95044 daily
-> SMART stays unavailable, evaluate baselines only at decision date 2019-12-31 with
-> last-known snapshot values, clearly labeled.
+> **STATUS — ✅ DONE (S5.1 + S5.2).**
+>
+> **S5.1** — `docs/S5_related_work_matrix.md`: 10 verified citations across 8 families
+> (Google FAST'07, Facebook/Meta OSDI'16 + SIGMETRICS'16, Alibaba SYSTOR'16 + FAST'21,
+> PDSW'16, Baidu FAST'20, SoCC'20, ATC'22, ATC'24, Backblaze industry reports). A
+> previously scoped "Meta ASPLOS'24 preventive-maintenance" reference could NOT be
+> verified and was dropped (no-unverified-citations rule). Position statement written
+> for the paper's Related Work section.
+>
+> **S5.2** — `src/drive/benchmarks/` + real benchmark on the 2019-Q4 outcome window
+> (same F_t as S4's t = 2019-10-01 cells), published in `results/s5_benchmark_*`:
+> - Population: 950,212 eligible at t (full) vs 703,292 present in the 2019-12-31
+>   SMART snapshot; **only 569 of 3,104 window failures (18.3%) are in the snapshot**
+>   (failure-driven id-rotation) → hard oracle ceiling for any SMART-feature method.
+> - Leakage-free SMART-feature evaluation is **structurally impossible** on this
+>   dataset (single post-window snapshot); baselines are therefore reported as a
+>   **leaky upper-bound benchmark**, never merged into S4 lift claims.
+> - Two baseline bugs caught by cross-checks before results were trusted: (a) the
+>   Backblaze ">0" rule must trip on **raw** counters (normalized n_* use
+>   100=healthy; >0 fires on ~100% of drives); (b) an index-alignment bug made all
+>   baselines select the same arbitrary first-K rows (2/569 coverage) — fixed and
+>   re-run.
+> - Headline: **DRIVE leakage-free infra-aware 7.45× lift @5% (37.3% coverage),
+>   multi 30:70 4.75× @5%** on the snapshot population, vs leaky SMART baselines
+>   (GBDT 90.3% coverage @5% = leakage artifact, labeled as such); risk tables from
+>   full history (restricted master has ZERO pre-t failures — diagnostic-documented).
+> - ML baselines pooled with model one-hot (per-family training infeasible:
+>   1–50 positives/family), documented deviation from plan wording.
+>
+> **Exit condition met:** benchmark matrix complete + benchmark-results table ready
+> for the paper's experiments section.
 
 ---
 
@@ -358,13 +386,18 @@ number in the paper traceable to an output file.
 
 ## Current position (as of commit `7166eb2`)
 
-- **Stages complete:** S0 ✅ → S1 ✅ → S2 ✅ → S3 ✅ → S4 ✅ — decision engine built,
-  validated, and evaluated on real data; headline results published in `results/`.
-- **Next stage:** S5 (related-work matrix + SMART-threshold/ML baselines under the
-  exact S3/S4 protocol).
+- **Stages complete:** S0 ✅ → S1 ✅ → S2 ✅ → S3 ✅ → S4 ✅ → **S5 ✅** — decision
+  engine built, validated, evaluated, and benchmarked against external baselines;
+  headline results + benchmark matrix published in `results/`.
+- **Next stage:** S6 dashboard (fully unblocked, both S4 and S5 outputs exist), then
+  S7 paper draft — the paper is now the critical deliverable per the teacher's
+  requirements (draft + Turnitin similarity & AI-plagiarism reports via Balakrishna
+  Raju, then final evaluation).
 - **Open team action items:**
   1. Backblaze recency audit → decides its paper role (S0.3 option 2 = likely drop-or-supplement).
   2. Optional: Tianchi 95044 registration for daily-SMART exposure upgrade / ML baseline features.
+  3. Turnitin: schedule the plagiarism check once the S7 draft exists (content
+     similarity + AI plagiarism).
 - **Quality gates maintained:** 49/49 unit tests; raw data untouched; all published
   numbers reproducible via `scripts/` runners over cached parquet layers; honest-scoping
   labels ("static-assumption annualized", "undefined" not zero) enforced in code.

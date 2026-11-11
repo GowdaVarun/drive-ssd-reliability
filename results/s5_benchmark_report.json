@@ -1,0 +1,54 @@
+{
+  "decision_date": "2019-10-01",
+  "outcome_window": "failures strictly after 2019-10-01 (2019-Q4)",
+  "budgets_pct": [
+    5.0,
+    10.0,
+    15.0,
+    20.0
+  ],
+  "populations": {
+    "full_eligible": 950212,
+    "snapshot_eligible": 703292,
+    "failures_after_t_full": 3104,
+    "failures_after_t_snapshot": 569,
+    "oracle_ceiling_snapshot_coverage": 0.1833,
+    "id_rotation_note": "81.7% of the window's failed drives are absent from the 2019-12-31 snapshot (S1 anomaly #3)"
+  },
+  "baselines": {
+    "smart_threshold": "Backblaze-style classic-5 rule (attrs 5/187/196/197/198 > 0), tripped-count ranking",
+    "ml_logreg": "pooled LogisticRegression(class_weight=balanced), model one-hot, median imputation",
+    "ml_gbdt": "pooled LightGBM(300 trees, lr=0.05, scale_pos_weight), model one-hot, native NaN"
+  },
+  "leakage_labels": {
+    "leakage-free": "DRIVE strategies + random: inputs strictly from history <= t",
+    "leaky-upper-bound": "SMART-feature baselines: features dated 2019-12-31 (after the outcome window)"
+  },
+  "max_lift_by_strategy": {
+    "infra": 7.452,
+    "ml_gbdt": 18.067,
+    "ml_logreg": 17.153,
+    "model": 1.81,
+    "multi_w30": 4.833,
+    "multi_w50": 3.55,
+    "multi_w70": 3.533,
+    "smart_threshold": 9.842
+  },
+  "mean_coverage_by_strategy": {
+    "infra": 0.5896,
+    "ml_gbdt": 0.9271,
+    "ml_logreg": 0.8783,
+    "model": 0.2078,
+    "multi_w30": 0.4697,
+    "multi_w50": 0.3449,
+    "multi_w70": 0.3423,
+    "smart_threshold": 0.7351
+  },
+  "random_lift_by_budget": {
+    "NaN": 1.008,
+    "NaN": 1.001,
+    "NaN": 1.005,
+    "NaN": 1.0
+  },
+  "runtime_sec": 216.7
+}
