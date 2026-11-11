@@ -23,8 +23,8 @@ stage below preserves that framing.
 | S3 | Maintenance decision engine | 4 strategies + rankings + explanations | S2 | Weeks 7–9 | ✅ done |
 | S4 | Chronological evaluation | Coverage/precision/lift tables across budgets | S3 | Weeks 9–11 | ✅ done |
 | S5 | Benchmarking vs existing approaches | Novelty evidence: concept matrix + empirical baselines | S4 | Weeks 11–13 | ✅ done |
-| S6 | Dashboard & final results | Streamlit dashboard matching experiment outputs | S4 (S5 for comparison page) | Weeks 12–14 | ⬜ unblocked (S4+S5 outputs exist) |
-| S7 | Research paper draft | Full manuscript + reproducibility package | S5, S6 | Weeks 13–16 | ⬜ not started |
+| S6 | Dashboard & final results | Streamlit dashboard matching experiment outputs | S4 (S5 for comparison page) | Weeks 12–14 | 🚧 built locally, unpublished (redesign pending) |
+| S7 | Research paper draft | Full manuscript + reproducibility package | S5, S6 | Weeks 13–16 | 🚧 next (critical deliverable) |
 
 Timeline is week-relative (≈16 weeks); compress/stretch to the actual semester calendar.
 Do not start S6 UI work before S4 outputs exist (handover §17, mistake #14). — *S4
@@ -41,6 +41,11 @@ outputs exist as of commit `7166eb2`; S6 is now unblocked.*
 **Codebase state:** 55/55 unit tests passing (S1–S5 modules); `scripts/` runners and
 `data/` layers stay local per repo policy; every S4/S5 number in `results/` traces to
 its parquet source.
+
+> **Note (dashboard):** the first dashboard implementation (commit `c7db778`) was
+> **reverted from the repo** at team request — reviewed as not intuitive; the file
+> stays on disk (`dashboard/app.py`, untracked) for the redesign. The repo history
+> therefore ends at S5 until the redesigned dashboard (or the paper) lands.
 
 ---
 
@@ -331,10 +336,12 @@ straight into the paper's experiments section.
 
 **Exit condition:** Every dashboard number traced back to an experiment output file.
 
-> **STATUS — ⬜ UNBLOCKED.** The "S4 outputs must exist" precondition is now satisfied
-> (S4 results + reports in `results/`). Pages 1–3 and 5 can be built from S1–S4
-> outputs; Page 4 needs S5 benchmark results for its comparison panel — build S5.1
-> content in parallel or leave the panel stubbed until S5.2 lands.
+> **STATUS — 🚧 BUILT LOCALLY, NOT PUBLISHED.** A first Streamlit version
+> (`dashboard/app.py`, kept on disk, **not pushed** — team decision) implements all
+> five plan pages and passes AppTest verification, but was reviewed as **not
+> intuitive enough**; a simpler, clearer redesign is pending. Dashboard work is
+> deprioritised behind S7 (the draft paper). Requirements for it are commented out
+> in `requirements.txt` until the redesign is published.
 
 ---
 
@@ -386,18 +393,19 @@ number in the paper traceable to an output file.
 
 ## Current position (as of commit `7166eb2`)
 
-- **Stages complete:** S0 ✅ → S1 ✅ → S2 ✅ → S3 ✅ → S4 ✅ → **S5 ✅** — decision
-  engine built, validated, evaluated, and benchmarked against external baselines;
-  headline results + benchmark matrix published in `results/`.
-- **Next stage:** S6 dashboard (fully unblocked, both S4 and S5 outputs exist), then
-  S7 paper draft — the paper is now the critical deliverable per the teacher's
-  requirements (draft + Turnitin similarity & AI-plagiarism reports via Balakrishna
-  Raju, then final evaluation).
+- **Stages complete:** S0 ✅ → S1 ✅ → S2 ✅ → S3 ✅ → S4 ✅ → S5 ✅. Repo history
+  currently ends at S5 (the first dashboard was reverted from the repo and is kept
+  locally pending a simpler redesign).
+- **Next stage:** S7 draft paper (the critical deliverable — teacher requires a draft
+  paper + Turnitin reports (content similarity + AI plagiarism, via Balakrishna
+  Raju) + good-quality results for final evaluation). Dashboard redesign happens
+  after/alongside the paper.
 - **Open team action items:**
   1. Backblaze recency audit → decides its paper role (S0.3 option 2 = likely drop-or-supplement).
   2. Optional: Tianchi 95044 registration for daily-SMART exposure upgrade / ML baseline features.
   3. Turnitin: schedule the plagiarism check once the S7 draft exists (content
      similarity + AI plagiarism).
+  4. Dashboard redesign: simpler and more intuitive than the first version.
 - **Quality gates maintained:** 49/49 unit tests; raw data untouched; all published
   numbers reproducible via `scripts/` runners over cached parquet layers; honest-scoping
   labels ("static-assumption annualized", "undefined" not zero) enforced in code.
