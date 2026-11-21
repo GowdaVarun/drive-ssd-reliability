@@ -44,12 +44,13 @@ a chronological evaluation at four decision dates and four budgets. Across the f
 dates, the rack-aware strategy captures a mean 18.7\% of subsequent failures at a 5\%
 budget (3.74$\times$ mean lift over random). At a 20\% budget, the multi-factor
 strategy with model weight 0.3 captures a mean 60.4\% of subsequent failures (3.02$\times$
-mean lift). These are retrospective group-risk prioritisation results, not individual
-failure probabilities or causal estimates of maintenance benefit. An attempted SMART
-and machine-learning comparison is excluded: the available SMART snapshot postdates
-the outcome window, and the implemented ML benchmark trains and scores on the same
-labels. The results therefore support a careful comparison of historical group-risk
-rankings, while leaving a temporally valid telemetry benchmark for future work.
+mean lift). In a separate temporal SMART holdout over six mapped model families,
+LightGBM captures 21.6\% of test failures at 5\% capacity (4.32$\times$ lift) and
+63.4\% at 20\% (3.17$\times$), on the same 373,511-drive test cohort as DRIVE.
+These are retrospective ranking results, not individual failure probabilities or
+causal estimates of maintenance benefit. The SMART result is limited to one temporal
+split and six model families; it does not replace the separate full-population S4
+evaluation or establish performance on other fleets.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -234,19 +235,59 @@ Budget & Primary winner & Lift & Coverage & Sensitivity winner & Lift & Coverage
 \end{tabular}
 \end{table*}
 
-\subsection{SMART Benchmark Validity}
-The project also contains an exploratory S5 output, but it is not included as
-comparative evidence. Its SMART snapshot is dated 2019-12-31, after the Q4 2019 outcome
-period used for the benchmark. In addition, the ML implementation fits its classifiers
-and scores the same drives using the same Q4 failure labels. This creates temporal
-feature leakage for the threshold rule and direct target leakage for the ML models.
-Consequently, the reported S5 scores cannot estimate prospective performance. The
-snapshot's 569 failures among 3,104 full-population failures (18.3\%) describes
-snapshot overlap under this dataset's drive identity turnover; it is not a general
-upper bound on telemetry methods.
-A separate Alibaba release contains daily SMART records for six SSD model families
-and failure labels~\cite{xu2021}; those time-series archives are needed for a valid
-held-out S5 benchmark and are not included in the current analysis package.
+\subsection{Temporal SMART Benchmark (S5)}
+We use the separate Alibaba daily SMART release for six model families~\cite{xu2021}.
+The published crosswalk was validated against the primary failure tickets: all 16,305
+failure events match exactly by model, disk ID, and timestamp. The training cohort uses
+the 2019-07-01 snapshot (380,907 eligible drives; 3,550 failed-drive keys in 3,845
+failure events from (2019-07-01, 2019-10-01)). The test cohort uses 2019-10-01 SMART
+features (373,511 eligible drives; 2,716 failed-drive keys in 2,913 events from
+(2019-10-01, 2020-01-01)). All test drives join the primary inventory and rack pool.
+
+The SMART threshold ranks the count of positive raw counters among attributes 5, 187,
+196, 197, and 198. Logistic regression and LightGBM use the 102 numeric SMART
+attributes plus model indicators; 56 nonempty, nonconstant attributes are selected
+using July training features only. Imputation, scaling, class weighting, and model
+fitting use only the July cohort and labels. No test labels are used to choose features
+or model settings. DRIVE's historical group risks use primary failure history strictly
+before 2019-10-01 and are ranked on the same October test cohort. The test-positive
+drive keys do not overlap training-positive keys. Surviving drives can occur in both
+time cohorts, so this is a temporal forecast evaluation rather than an independent-drive
+holdout.
+
+Table~\ref{tab:s5} reports selected budgets. LightGBM has the highest coverage at both
+endpoints; DRIVE's infrastructure ranking remains competitive, especially at 20\%.
+The random intervals describe variability across 100 selection seeds, not uncertainty
+across fleets or years. The full table, random draws, input audit, and per-drive ranks
+are included in the paper package and project results.
+
+\begin{table*}[t]
+\caption{S5 metrics on the six-family October temporal test cohort (373,511 eligible drives; 2,716 failed drives). Random intervals are empirical 2.5th--97.5th seed percentiles.}
+\label{tab:s5}
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Strategy & Coverage @5\% & Lift @5\% & Coverage @20\% & Lift @20\% \\
+\midrule
+Random & 5.05\% (4.40--5.87) & 1.009 (0.880--1.175) & 20.05\% (18.80--21.54) & 1.002 (0.940--1.077) \\
+SMART threshold & 15.72\% & 3.144 & 28.65\% & 1.432 \\
+Logistic regression & 19.26\% & 3.851 & 57.92\% & 2.896 \\
+LightGBM & 21.58\% & 4.315 & 63.40\% & 3.170 \\
+DRIVE model & 3.57\% & 0.714 & 31.11\% & 1.556 \\
+DRIVE infrastructure & 16.02\% & 3.203 & 58.25\% & 2.912 \\
+DRIVE multi ($w=0.3$) & 14.95\% & 2.990 & 53.28\% & 2.664 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/s5_temporal_coverage.png}
+\caption{Held-out S5 failure coverage at equal maintenance budgets on the six-family
+cohort. The random bars show 2.5th--97.5th percentiles over 100 selection seeds.}
+\label{fig:s5-coverage}
+\end{figure*}
 
 \subsection{Illustrative Selection Explanation}
 At the 2019-07-01 decision date and 5\% budget, the highest-ranked rack example is
@@ -272,13 +313,14 @@ Multi $w=0.3$ & A3 / 35691 & Model $5.859\times10^{-5}$ (norm 0.832); rack $2.99
 \end{table}
 
 \section{Discussion}
-These results suggest that rack history can be useful when only a small share of the
-fleet can be selected, while combining model and rack information may improve
-coverage at a larger budget. This comparison concerns one historical dataset and four
-decision dates. It does not establish that maintenance based on these rankings
-prevents failures, reduces cost, or improves future fleet reliability. It also does
-not demonstrate superiority to leakage-free SMART prediction; the current snapshot
-does not support that comparison.
+The S4 results show that rack history is useful at tight capacity and that the
+multi-factor ranking performs well at larger budgets. In the separate S5 temporal
+cohort, LightGBM captures more test failures than DRIVE at every tested budget, while
+DRIVE infrastructure ranking remains close at the largest budget (58.25\% versus
+63.40\% coverage at 20\%). These are results from one historical split on six model
+families, not evidence of statistical superiority across fleets or years. Neither
+ranking establishes that maintenance based on its list prevents failures, reduces
+cost, or improves future fleet reliability.
 
 The design is intentionally interpretable: each choice can be traced to a model or
 rack group's past rate. This makes the ranking inspectable, but it also means that
@@ -286,27 +328,30 @@ drives sharing a group receive similar group-risk signals. The score should be u
 for prioritisation or investigation, not as an individual failure probability.
 
 \section{Limitations and Future Work}
-First, the study is retrospective and uses a single operator dataset from 2018--2019.
-Second, the rate estimator assumes static exposure over parts of the observation
-period; reported rates and rankings should not be read as calibrated time-varying
-hazards. Third, failure tickets may not capture every operational failure mode.
-Fourth, results depend on group definitions, smoothing strength, and the tested
-multi-factor weights. Fifth, maintenance costs and intervention outcomes are absent,
-so the budget represents a drive-count capacity, not a monetary cost. Finally, a valid
-telemetry baseline requires time-indexed SMART features available before each decision
-date and strict train/test separation by time. Acquiring such data, evaluating on
-additional fleets, and testing whether selected interventions change outcomes are
-future work.
+First, the study is retrospective and uses one operator dataset from 2018--2019. S5
+contains one temporal split and six mapped model families; 351,144 drive keys appear
+in both eligible time cohorts, so the results do not represent an independent-drive
+holdout. Second, failure-table absence is treated as no recorded failure in the window,
+not proof of health, and unrecorded removals can affect labels. Third, S5's
+class-weighted ranking scores are not calibrated probabilities. Fourth, the DRIVE rate
+estimator assumes static exposure over parts of the observation period; reported rates
+are not calibrated time-varying hazards. Fifth, results depend on group definitions,
+smoothing strength, and the tested multi-factor weights. Maintenance costs and
+intervention outcomes are absent, so budgets represent drive-count capacity rather
+than monetary cost. Evaluation on additional fleets and periods, improved censoring
+information, and intervention studies remain future work.
 
 \section{Conclusion}
 We compared chronological model-, rack-, and multi-factor historical group-risk
-rankings under equal drive-count budgets. The four-date results show a 3.74$\times$
-mean lift for rack-aware selection at a 5\% budget and a 3.02$\times$ mean lift for
-the $w=0.3$ multi-factor ranking at 20\%. These results support historical group-risk
-ranking as a transparent maintenance decision aid in this evaluation setting. They
-do not establish individual failure prediction or benefit over a valid telemetry
-predictor. Future comparisons need genuinely pre-decision telemetry and held-out
-temporal evaluation.
+rankings under equal drive-count budgets and evaluated them separately against SMART
+methods on a common six-family temporal cohort. S4 shows a 3.74$\times$ mean lift for
+rack-aware selection at 5\% and a 3.02$\times$ mean lift for the $w=0.3$ multi-factor
+ranking at 20\%. On S5, LightGBM captures 21.58\% of test failures at 5\% and 63.40\%
+at 20\%, while DRIVE infrastructure selection captures 16.02\% and 58.25\%,
+respectively. These results support transparent group-risk ranking as a decision aid,
+while showing that telemetry can improve selection in the tested subset. They do not
+establish individual failure probabilities, broad generalization, or maintenance
+benefit.
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}

@@ -173,9 +173,9 @@ def page_overview():
             "  assumed constant over the 730-day window; absolute AFRs are biased\n"
             "  ~2.3–3.3× low vs published AFRs (rankings are unaffected).\n"
             "- Drive key = `(model, disk_id)`; `disk_id` alone repeats across models.\n"
-            "- **Id-rotation:** failed drives are replaced and their disk_id leaves the\n"
-            "  SMART telemetry. The available 2019-12-31 snapshot is after the\n"
-            "  evaluation window and is not used as predictive evidence.\n"
+            "- **Id-rotation:** failed drives are replaced and their disk_id can leave\n"
+            "  SMART telemetry. The 2019-12-31 snapshot is not used as a predictor; S5\n"
+            "  uses the July and October time-indexed snapshots in a separate holdout.\n"
             "- Metrics with zero failures in the evaluation window report as **undefined**,\n"
             "  never zero."
         )
@@ -432,13 +432,115 @@ def page_comparison():
 
     st.caption("Each random reference is the mean of 100 draws. Coverage is the share of future failures selected; precision is the share of selected drives that fail.")
 
-    with st.expander("Why there is no SMART/ML benchmark line"):
+    s5_path = REPO / "results" / "s5_temporal_results.csv"
+    s5_report_path = REPO / "results" / "s5_temporal_report.json"
+    if s5_path.exists() and s5_report_path.exists():
+        s5 = pd.read_csv(s5_path)
+        s5_report = json.loads(s5_report_path.read_text(encoding="utf-8"))
+        st.divider()
+        st.subheader("Temporal SMART benchmark · S5")
+        st.caption(
+            "Separate one-window holdout on six mapped model families. July 2019 SMART "
+            "features/train labels → October SMART features/Q4 test labels. This cohort "
+            "comparison is separate from the four-date, full-population S4 results above."
+        )
+        test_stats = s5_report["source_labels"]["test"]
+        test_join = s5_report["test_join"]
+        p1, p2, p3 = st.columns(3)
+        p1.metric("Common test drives", f"{test_join['common_test_population']:,}")
+        p2.metric("Positive drive labels", f"{test_stats['window_positive_drive_keys_in_cohort']:,}")
+        p3.metric("Inventory / rack join", f"{test_join['join_coverage']:.0%}")
+
+        s5_metric = st.selectbox(
+            "S5 comparison metric",
+            ["coverage", "lift", "precision"],
+            format_func={"coverage": "Failure coverage", "lift": "Lift over random", "precision": "Selection precision"}.get,
+            key="s5_comparison_metric",
+        )
+        s5_labels = {
+            "smart_threshold": "SMART threshold",
+            "ml_logreg": "SMART logistic",
+            "ml_gbdt": "SMART LightGBM",
+            "drive_model": "DRIVE model",
+            "drive_infra": "DRIVE infrastructure",
+            "drive_multi_w70": "DRIVE multi 70:30",
+            "drive_multi_w50": "DRIVE multi 50:50",
+            "drive_multi_w30": "DRIVE multi 30:70",
+            "random": "Random (100 seeds)",
+        }
+        s5_colors = {
+            "smart_threshold": "#8b9bb0",
+            "ml_logreg": "#21a179",
+            "ml_gbdt": "#4c9be8",
+            "drive_model": "#e7bd55",
+            "drive_infra": "#f08a4b",
+            "drive_multi_w70": "#b089e8",
+            "drive_multi_w50": "#e76f9a",
+            "drive_multi_w30": "#d85568",
+            "random": "#c5d0de",
+        }
+        s5_fig = go.Figure()
+        for strategy, label in s5_labels.items():
+            rows = s5.loc[s5["strategy"].eq(strategy)].sort_values("budget_pct")
+            if rows.empty:
+                continue
+            error_y = None
+            if strategy == "random" and s5_metric in {"coverage", "lift"}:
+                low_col = f"{s5_metric}_ci_2_5"
+                high_col = f"{s5_metric}_ci_97_5"
+                error_y = {
+                    "type": "data",
+                    "symmetric": False,
+                    "array": (rows[high_col] - rows[s5_metric]).clip(lower=0),
+                    "arrayminus": (rows[s5_metric] - rows[low_col]).clip(lower=0),
+                    "visible": True,
+                    "color": s5_colors[strategy],
+                    "thickness": 1.5,
+                }
+            s5_fig.add_trace(go.Scatter(
+                x=rows["budget_pct"],
+                y=rows[s5_metric],
+                mode="lines+markers",
+                name=label,
+                line={"color": s5_colors[strategy], "width": 3},
+                marker={"size": 7},
+                error_y=error_y,
+            ))
+        s5_fig.update_layout(
+            margin=dict(l=10, r=10, t=25, b=10),
+            legend_title=None,
+            hovermode="x unified",
+            xaxis_title="Maintenance capacity (%)",
+            yaxis_title={"coverage": "Failure coverage", "lift": "Lift (× random)", "precision": "Selection precision"}[s5_metric],
+            paper_bgcolor="#111c2d",
+            plot_bgcolor="#111c2d",
+            font_color="#e7eef8",
+        )
+        s5_fig.update_xaxes(dtick=5, ticksuffix="%", gridcolor="#26364b")
+        s5_fig.update_yaxes(gridcolor="#26364b", tickformat=".0%" if s5_metric != "lift" else ".1f")
+        st.plotly_chart(s5_fig, width="stretch")
+
+        s5_table = s5.copy()
+        s5_table["strategy"] = s5_table["strategy"].map(s5_labels)
+        display_cols = ["strategy", "budget_pct", "caught", "failures_total", "coverage", "precision", "lift"]
+        st.dataframe(s5_table[display_cols].rename(columns={
+            "strategy": "Method", "budget_pct": "Budget (%)", "caught": "Caught drives",
+            "failures_total": "Positive drives", "coverage": "Coverage", "precision": "Precision", "lift": "Lift",
+        }), hide_index=True, width="stretch")
+        st.caption(
+            "Random bars show empirical 2.5th–97.5th percentiles across 100 selection seeds; "
+            "they are not deployment confidence intervals. No model probability calibration is claimed."
+        )
+    else:
+        st.info("The saved valid S5 temporal results are not available in this checkout.")
+
+    with st.expander("Legacy S5 diagnostics excluded"):
         st.info(
-        "S5 SMART/ML scores are excluded. The SMART snapshot postdates its outcome "
-        "window, and the ML benchmark fits and scores on the same failure labels. "
-        "These are invalid performance comparisons; the 18.3% snapshot overlap is "
-        "specific to this cohort and is not a general SMART ceiling.",
-        icon="ℹ️",
+            "The old `s5_benchmark_*` diagnostics used a 2019-12-31 SMART snapshot after "
+            "the Q4 outcome window and trained/scored ML on the same labels. They are not "
+            "shown as predictive evidence. The temporal S5 results above use the separate "
+            "July/October snapshots and training-only fitting.",
+            icon="ℹ️",
         )
 
 

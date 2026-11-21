@@ -38,9 +38,11 @@
    de-duplication first.
 3. **No repeat failures:** under the corrected key there are **no** repeat-event drives
 4. **SMART coverage in the local primary release is a single day** (2019-12-31), after
-   the Q4 2019 outcome window used for S5. It is not valid for predictive ranking at
-   earlier decision dates. The Tianchi 95044 daily-SMART release is required for a
-   temporally valid S5 baseline; until it is available locally, S5 remains incomplete.
+   the Q4 2019 outcome window used in the original S5 diagnostic. It is not valid for
+   predictive ranking at earlier decision dates. A separate Tianchi 95044 daily-SMART
+   archive has since been audited and supports the temporal S5 comparison documented
+   in `docs/S5_data_access_and_protocol.md`; this does not change the Alibaba-primary
+   dataset decision or imply that primary S1–S4 were rerun.
 5. **Terminology freeze (announced):** this dataset uses **rack / node** (plus
    `machine_room_id`); Backblaze (if included) uses pod/vault/cluster/datacenter. Never mixed.
 

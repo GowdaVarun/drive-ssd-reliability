@@ -1,0 +1,267 @@
+{
+  "status": "completed_temporally_held_out_benchmark",
+  "protocol": {
+    "training_feature_date": "2019-07-01",
+    "training_labels_strictly_after": "2019-07-01",
+    "training_labels_strictly_before": "2019-10-01",
+    "test_feature_date": "2019-10-01",
+    "test_labels_strictly_after": "2019-10-01",
+    "test_labels_strictly_before": "2020-01-01",
+    "cohort_eligibility": "exclude drives with any labeled failure strictly before that split's decision date",
+    "training_test_positive_drive_overlap": 0,
+    "train_test_eligible_drive_key_overlap": 351144,
+    "training_positive_keys_visible_in_raw_test_snapshot": 306,
+    "training_positive_keys_remaining_eligible_at_test_date": 0,
+    "label_windows_disjoint": true,
+    "entity_overlap_policy": "a surviving drive may appear in both temporal cohorts; any drive with a failure before the October decision is excluded from the test cohort",
+    "full_population_s4_rerun": false
+  },
+  "source_labels": {
+    "failure_event_rows": 16305,
+    "unique_drive_keys": 16305,
+    "training": {
+      "snapshot_rows": 383744,
+      "prior_failure_keys_excluded": 2837,
+      "eligible_rows": 380907,
+      "window_failure_event_rows": 3845,
+      "window_positive_drive_keys_in_cohort": 3550,
+      "positive_event_rows_outside_cohort": 295,
+      "eligible_rows_by_model": {
+        "MA1": 23010,
+        "MA2": 85163,
+        "MB1": 39025,
+        "MB2": 43179,
+        "MC1": 170242,
+        "MC2": 20288
+      },
+      "positive_drive_keys_by_model": {
+        "MA1": 2,
+        "MA2": 11,
+        "MB1": 181,
+        "MB2": 73,
+        "MC1": 3177,
+        "MC2": 106
+      }
+    },
+    "test": {
+      "snapshot_rows": 376234,
+      "prior_failure_keys_excluded": 2723,
+      "eligible_rows": 373511,
+      "window_failure_event_rows": 2913,
+      "window_positive_drive_keys_in_cohort": 2716,
+      "positive_event_rows_outside_cohort": 197,
+      "eligible_rows_by_model": {
+        "MA1": 19844,
+        "MA2": 80500,
+        "MB1": 39494,
+        "MB2": 43407,
+        "MC1": 169558,
+        "MC2": 20708
+      },
+      "positive_drive_keys_by_model": {
+        "MA1": 1,
+        "MA2": 39,
+        "MB1": 297,
+        "MB2": 46,
+        "MC1": 2226,
+        "MC2": 107
+      }
+    }
+  },
+  "crosswalk": {
+    "MA1": "A3",
+    "MA2": "A2",
+    "MB1": "B3",
+    "MB2": "B2",
+    "MC1": "C1",
+    "MC2": "C2"
+  },
+  "crosswalk_validation": [
+    {
+      "tianchi_model": "MA1",
+      "primary_model": "A3",
+      "tianchi_event_rows": 1370,
+      "exact_event_matches": 1370,
+      "primary_event_rows": 1370,
+      "label_ids_in_primary_location": 1370,
+      "unique_label_ids": 1370
+    },
+    {
+      "tianchi_model": "MA2",
+      "primary_model": "A2",
+      "tianchi_event_rows": 883,
+      "exact_event_matches": 883,
+      "primary_event_rows": 883,
+      "label_ids_in_primary_location": 883,
+      "unique_label_ids": 883
+    },
+    {
+      "tianchi_model": "MB1",
+      "primary_model": "B3",
+      "tianchi_event_rows": 1807,
+      "exact_event_matches": 1807,
+      "primary_event_rows": 1807,
+      "label_ids_in_primary_location": 1807,
+      "unique_label_ids": 1807
+    },
+    {
+      "tianchi_model": "MB2",
+      "primary_model": "B2",
+      "tianchi_event_rows": 604,
+      "exact_event_matches": 604,
+      "primary_event_rows": 604,
+      "label_ids_in_primary_location": 604,
+      "unique_label_ids": 604
+    },
+    {
+      "tianchi_model": "MC1",
+      "primary_model": "C1",
+      "tianchi_event_rows": 10510,
+      "exact_event_matches": 10510,
+      "primary_event_rows": 10510,
+      "label_ids_in_primary_location": 10510,
+      "unique_label_ids": 10510
+    },
+    {
+      "tianchi_model": "MC2",
+      "primary_model": "C2",
+      "tianchi_event_rows": 1131,
+      "exact_event_matches": 1131,
+      "primary_event_rows": 1131,
+      "label_ids_in_primary_location": 1131,
+      "unique_label_ids": 1131
+    }
+  ],
+  "test_join": {
+    "candidate_test_drives": 373511,
+    "joined_to_primary_location_and_DRIVE_scores": 373511,
+    "join_coverage": 1.0,
+    "unlocated_rack_rows": 0,
+    "common_test_population": 373511
+  },
+  "features": {
+    "available_numeric_features": 102,
+    "retained_varying_features_selected_on_train_only": 56,
+    "retained_feature_names": [
+      "n_1",
+      "r_1",
+      "n_5",
+      "r_5",
+      "n_9",
+      "r_9",
+      "n_12",
+      "r_12",
+      "n_170",
+      "r_170",
+      "n_171",
+      "r_171",
+      "n_172",
+      "r_172",
+      "n_173",
+      "r_173",
+      "r_174",
+      "n_177",
+      "r_177",
+      "n_180",
+      "r_180",
+      "n_181",
+      "r_181",
+      "n_182",
+      "r_182",
+      "n_183",
+      "r_183",
+      "n_184",
+      "r_184",
+      "n_187",
+      "r_187",
+      "r_188",
+      "n_190",
+      "r_190",
+      "r_192",
+      "n_194",
+      "r_194",
+      "n_195",
+      "r_195",
+      "n_196",
+      "r_196",
+      "r_197",
+      "r_198",
+      "n_199",
+      "r_199",
+      "r_206",
+      "r_211",
+      "n_233",
+      "n_241",
+      "r_241",
+      "n_242",
+      "r_242",
+      "r_244",
+      "n_175",
+      "r_175",
+      "n_232"
+    ],
+    "feature_selection_rule": "keep SMART columns nonempty and nonconstant in July training data; no test labels or test feature values used for selection",
+    "imputation": "per-feature median fit on July training data; all-empty training values set to 0",
+    "scaling": "mean and population standard deviation fit on July training data",
+    "model_encoding": "six fixed one-hot indicators for published Tianchi model codes"
+  },
+  "model_configs": {
+    "smart_threshold": {
+      "attributes": [
+        "r_5",
+        "r_187",
+        "r_196",
+        "r_197",
+        "r_198"
+      ],
+      "condition": "raw r_i > 0",
+      "tie_break": "alert count desc, alert-value sum desc, model, disk_id"
+    },
+    "ml_logreg": {
+      "estimator": "sklearn LogisticRegression",
+      "C": 1.0,
+      "class_weight": "balanced",
+      "solver": "lbfgs",
+      "max_iter": 1500,
+      "seed": 0
+    },
+    "ml_gbdt": {
+      "estimator": "LightGBM LGBMClassifier",
+      "n_estimators": 300,
+      "learning_rate": 0.05,
+      "num_leaves": 31,
+      "class_weight": "scale_pos_weight from training labels only",
+      "seed": 0
+    },
+    "drive": {
+      "history": "primary failure tickets strictly before 2019-10-01; static exposure; beta=730 drive-days",
+      "strategies": [
+        "model",
+        "infra",
+        "multi weights 0.7, 0.5, 0.3"
+      ],
+      "normalization": "within common test population"
+    }
+  },
+  "evaluation": {
+    "budgets_pct": [
+      5.0,
+      10.0,
+      15.0,
+      20.0
+    ],
+    "selected_count": "floor(budget * common eligible test population)",
+    "random_seeds": 100,
+    "random_interval": "empirical 2.5th and 97.5th percentiles across 100 random-selection seeds; reflects seed variability only",
+    "probability_calibration": "not reported; class-weighted model scores are ranking scores and were not calibrated on a separate validation partition",
+    "test_cohort_metrics_are": "exact descriptive metrics for the fixed held-out cohort; no sampling confidence intervals claimed"
+  },
+  "outputs": {
+    "metrics_csv": "results/s5_temporal_results.csv",
+    "random_seed_metrics_csv": "results/s5_temporal_random_seeds.csv",
+    "per_drive_predictions_gzip_csv": "results/s5_temporal_predictions.csv.gz",
+    "input_audit_json": "results/s5_input_audit.json",
+    "input_manifest": "data/raw/tianchi_95044/MANIFEST.md"
+  },
+  "runtime_seconds": 52.9
+}

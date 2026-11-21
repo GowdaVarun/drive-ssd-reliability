@@ -9,14 +9,14 @@ for the remaining stages (S2–S7). Read with `DRIVE_Implementation_Plan.md` ris
 |---|---|---|---|---|
 | 1 | Extreme failure concentration (C1: 20.7% of fleet → 57.2% of failures) | S3/S4 results; S7 claims | None needed | It is the signal, not a defect. Guard: never present it as "we found an anomaly", present as study objective |
 | 2 | 27% of healthy drives absent from the final-day snapshot (no retire dates) | S1 exposure; S2 priors; S4 stability; S6 Page 1; S7 limitations | Cohort policy documented; alternate-exposure sensitivity saved; actual tenure remains unknown | `location` defines the primary fleet; the dashboard discloses snapshot absence; S4 compares static and snapshot-anchored bounds. Neither bound recovers true deployment dates. |
-| 3 | SMART snapshot contains failed drives with post-hoc last-known values; only 284/3,459 failures are Dec-2019 → snapshot ≠ "healthy census on 2019-12-31" | S5.2 baselines; S6 SMART views | Snapshot demoted; temporal baseline pending data access | Do not report predictive scores from the one-day snapshot. Obtain **Tianchi 95044** daily SMART and labels; only then evaluate pre-decision features with a temporal split. A 2019-12-31 cross-section is not a fallback predictive benchmark because there are no later outcomes in the primary data. |
+| 3 | SMART snapshot contains failed drives with post-hoc last-known values; only 284/3,459 failures are Dec-2019 → snapshot ≠ "healthy census on 2019-12-31" | S5.2 baselines; S6 SMART views | Snapshot demoted; temporal benchmark completed on Tianchi 95044 | Do not report predictive scores from the one-day snapshot. The daily archive now supports a July-to-October temporal holdout; results and limitations are recorded in `docs/S5_data_access_and_protocol.md`. This does not make the 2019-12-31 cross-section a valid predictive benchmark. |
 | 4 | Id-rotation on replacement: 9,527 same-slot second disk_ids within a model; snapshot contains 3,459 failed ids with differing values | S3 eligibility; S4 leakage tests | Mitigated | `eligible_at()` keeps ids permanently ineligible post-failure (conservative upper bias < 18,387 slots, ~1.9% of fleet). Leakage tests in S4 must verify *no failure knowledge after t* enters ranking |
 | 5 | Static-window AFRs understate true drive-day AFR by ×2.3–3.3 (uniform-ish across models) | S2 all rate tables; S6 Page 2 labels; S7 results | Caveat labelled; alternate exposure sensitivity saved | AFRs remain labelled "static-assumption annualized". S2 and S4 include dual-exposure analyses; strategy order is broadly similar, while effect sizes and the 20% multi-factor weight are exposure-sensitive. |
 
 Root cause of anomalies 2 and 5 is the same missing fact: **per-day presence**. Tianchi
-95044 daily SMART may help quantify both, subject to schema and identifier validation;
-the archive is not present locally. Access, validation, and any updated exposure
-sensitivity remain open work rather than completed project results.
+95044 daily SMART has been audited and used for a bounded temporal S5 cohort. This does
+not replace the Alibaba-primary fleet or recompute S1–S4 exposure results; using the
+daily archive to revise those stages would be a separate analysis.
 
 ## Already encoded in implementation
 

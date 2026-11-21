@@ -248,21 +248,25 @@ budget-aware? infra-aware?):
 > Integrity note: a scoped Meta ASPLOS'24 reference could not be verified and was
 > **dropped** (no-unverified-citations rule).
 
-### S5.2 — Exploratory benchmark (not valid performance evidence)
+### S5.2 — Temporal SMART comparison (single held-out period)
 
-The S5 script compares a Backblaze-style SMART threshold, logistic regression, and
-LightGBM on a snapshot-present subset. Audit found two validity problems: the SMART
-snapshot is dated 2019-12-31, after the Q4 outcome window, and the ML models are fit
-and scored on the same Q4 failure labels. The threshold score is therefore a
-post-outcome diagnostic; the ML scores additionally contain direct target leakage.
-Do not present these values as held-out performance, upper bounds, or evidence that
-SMART prediction is infeasible.
+With Tianchi 95044 available, S5 trains on the 2019-07-01 SMART snapshot and Q3
+failures, then scores the at-risk population visible on 2019-10-01 against Q4
+failures. Prior failures are excluded at each decision date. Logistic regression and
+LightGBM preprocessing is fitted only on the training cohort. The comparison
+evaluates a SMART threshold, those two SMART baselines, and DRIVE model,
+infrastructure, and three multi-factor rankings over the same 373,511-drive test
+cohort (2,716 Q4 failures).
 
-The 569 of 3,104 failures present in the snapshot (18.3%) is the overlap for this
-selected set and period only. It is not a general ceiling: different temporal SMART
-data and identity-linkage policies could change the overlap. S5 performance comparison
-remains incomplete until pre-decision features and a temporally held-out protocol are
-available. The paper package excludes all S5 scores from its claims.
+At 20%, held-out failure coverage was 63.40% for LightGBM (3.170× lift), 58.25% for
+DRIVE infrastructure risk (2.912×), and 53.65% for DRIVE multi-factor (model weight
+0.7; 2.682×). At 5%, DRIVE infrastructure covered 16.02% (3.203×), compared with
+21.58% for LightGBM (4.315×). These results represent one temporal split, not
+performance across years or an independent-drive split. Devices can appear in both
+cohorts while surviving, but no training-period failure remains eligible in the test
+cohort. Random baselines use 100 seeds; intervals describe seed variability, not
+confidence intervals. `s5_benchmark_*` remains invalid legacy diagnostics. Protocol:
+`docs/S5_data_access_and_protocol.md`.
 ## Where ML is (and is not) used
 
 - **S0–S4: no ML anywhere.** DRIVE's scores are statistics — empirical-Bayes
@@ -271,8 +275,10 @@ available. The paper package excludes all S5 scores from its claims.
   (3) leakage discipline is trivial to enforce; (4) the claim is *decision support*,
   not a new predictor. The only knobs are β (sensitivity-checked) and w (three
   candidates evaluated, none "learned").
-- **S5.2: ML experiment exists but is invalid for comparison** because it fits and
-  scores on the same labels. Those scores are excluded from research claims.
+- **S5: supervised ML uses a temporal holdout.** The July training cohort fits the
+  preprocessing and models; October is scored once against Q4 outcomes. These results
+  are limited to one split and six mapped model families. The older in-sample run
+  remains invalid and excluded.
 
 ---
 
@@ -280,7 +286,6 @@ available. The paper package excludes all S5 scores from its claims.
 
 | Stage | Status |
 |---|---|
-| S0–S5 | ✅ done, committed & pushed (`7484920`, `7166eb2`, `ccd79cc`, `0a98c52`) |
+| S0–S5 | ✅ complete; S5 temporal holdout and outputs saved in `results/` |
 | S6 Dashboard | unblocked — every number traceable to `results/` + parquet outputs |
-| S7 Draft paper | final deliverable: IEEE-format draft → Turnitin (content-similarity +
-  AI-plagiarism via Balakrishna Raju) → final evaluation |
+| S7 Draft paper | IEEE-format collaboration draft updated with held-out S5 results; coauthor review remains |

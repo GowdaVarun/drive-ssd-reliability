@@ -8,22 +8,22 @@
   `src/drive/evaluation/`.
 - Check all reported values against `tables/s4_results.csv` and preserve the four-date
   averaging rule.
-- Review the generated workflow and S4 charts against the source table in
-  `tables/s4_results.csv`; regenerate them with `scripts/build_figures.py` if edits are
-  made.
+- Check S5 values against `tables/s5_temporal_results.csv`; keep the six-family,
+  one-temporal-split scope explicit and do not merge it with full-population S4 metrics.
+- Review the generated workflow and S4/S5 charts against their source tables; regenerate
+  them with `scripts/build_figures.py` if edits are made.
 - Verify bibliography records and add any required dataset citation.
 - Record reviewer changes and unresolved issues below.
 
 ## Results policy
 
-The primary quantitative evidence is the S4 chronological evaluation. The S2
+The primary DRIVE evidence is the S4 full-population chronological evaluation. The S2
 snapshot-anchored exposure sensitivity is a retrospective bound, not an available
-decision-time feature; its result is documented separately from the primary estimate.
-The S5 SMART
-threshold and ML results are excluded from performance claims: their snapshot features
-are dated after the Q4 outcome window, and the ML implementation fits and scores on the
-same labels. The 18.3% snapshot overlap is a property of this selected snapshot
-population, not a general upper bound on the value of SMART data.
+decision-time feature. S5 is a separate temporal holdout on six model families; it uses
+July SMART features and July–September training labels, then October features and Q4
+test labels. Report its cohort and temporal limits, and keep it distinct from S4. The
+legacy `results/s5_benchmark_*` files remain invalid post-outcome/in-sample diagnostics
+and are excluded from performance claims.
 
 ## Review log
 

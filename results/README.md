@@ -17,9 +17,15 @@ not duplicated here.
 | `s4_headline_results.csv` | Four-date metric averages used by the paper |
 | `s4_snapshot_anchored_results.csv` | Full 96-row sensitivity grid under the alternate exposure bound |
 | `s4_exposure_sensitivity.csv`, `s4_exposure_sensitivity_report.json` | Metric deltas, rank correlations, and budget winners vs the primary run |
+| `s5_input_audit.json` | Source inventory, schema/date coverage, label crosswalk, and cohort audit for Tianchi 95044 |
+| `s5_temporal_report.json`, `s5_temporal_results.csv` | July-to-October temporal holdout comparison for SMART and DRIVE rankings |
+| `s5_temporal_random_seeds.csv` | Random-ranking reference across 100 seeds per budget; intervals describe seed variability |
+| `s5_temporal_predictions.csv.gz` | Per-drive held-out labels, scores, and ranks for the October test cohort |
 | `s5_benchmark_report.json`, `s5_benchmark_results.csv` | Historical S5 diagnostics only; invalid for predictive comparison |
 
 Rebuild the primary runs with `scripts/run_s1_pipeline.py` through
-`scripts/run_s4_evaluation.py`, then run `scripts/export_results.py`. The S5 runner
-refuses to run by default because the only local SMART snapshot postdates its outcome
-window and its ML diagnostic is in-sample. See `docs/S5_data_access_and_protocol.md`.
+`scripts/run_s4_evaluation.py`, then run `scripts/export_results.py`. For S5, run
+`scripts/audit_tianchi_s5_inputs.py` before `scripts/run_s5_temporal_benchmark.py`.
+The old `scripts/run_s5_benchmarks.py` and `s5_benchmark_*` files document invalid
+legacy diagnostics; do not use them as performance evidence. See
+`docs/S5_data_access_and_protocol.md`.

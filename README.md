@@ -23,9 +23,9 @@ using failure coverage, selection precision and lift over a random baseline.
 | **S2** | Historical failure analytics | ✅ **Done** | Model/infrastructure risk tables, Gamma-Poisson shrinkage, rank stability ρ ≥ 0.99 (priors), ρ = 0.92 (exposure) |
 | **S3** | Maintenance decision engine | ✅ **Done** | 4 strategies (random, model, infra, multi-factor) with common contract; ranked lists + explanations; deterministic tie-break |
 | **S4** | Chronological evaluation | ✅ **Done** | 4 decision dates × 6 variants × 4 budgets; full-population run plus snapshot-anchored exposure sensitivity; 56/56 unit tests |
-| **S5** | Benchmarking vs existing approaches | ⚠️ **Partial** | Related-work matrix complete; SMART/ML comparison is exploratory and invalid for performance claims (post-outcome snapshot; ML trained and scored on the same labels) |
+| **S5** | Benchmarking vs existing approaches | ✅ **Complete (six-family temporal holdout)** | July 2019 SMART features/train labels → October features/Q4 test labels; 373,511 common test drives; input crosswalk and temporal integrity validated |
 | **S6** | Dashboard & final results | ✅ **Implemented and smoke-tested** | Five-page Streamlit app; selected-drive parquet reads are filtered; all five AppTest pages pass |
-| **S7** | Research paper draft | 🚧 **Draft package created** | IEEE LaTeX manuscript, bibliography, verified S4 tables, collaboration notes, and reproducibility instructions in `paper/` |
+| **S7** | Research paper draft | 🚧 **Draft package updated** | IEEE LaTeX manuscript now includes valid S5 temporal results, verified S4/S5 tables, bibliography, and collaboration notes in `paper/` |
 
 ## Timeline
 
@@ -36,20 +36,19 @@ collaboration tasks.
 ## Quality Gates
 
 - **56/56 unit tests passing** (S1–S5 modules) and all five dashboard AppTest pages passing
-- S4 paper values are traceable to the checked-in evaluation CSV and copied into `paper/tables/`
+- S4 and S5 values are traceable to saved evaluation tables; S5 inputs have checksums, schema/date checks, and exact crosswalk matches
 - Raw data untouched; honest-scoping labels enforced ("static-assumption annualized", "undefined" not zero)
 
 ## Open Team Action Items
 
-1. **S5 benchmark redesign** — obtain Tianchi 95044 daily SMART logs and failure labels, validate the model crosswalk, then run the temporal protocol in [docs/S5_data_access_and_protocol.md](docs/S5_data_access_and_protocol.md). Until then, S5 remains partial; current outputs are invalid diagnostics and must not be presented as held-out results.
-2. **Paper collaboration** — have coauthors verify the author block, review result figures, and verify citations in `paper/`.
-3. **Optional S0 extension** — audit Backblaze SSD recency data before making any cross-era claim; current results are Alibaba-only.
+1. **Paper collaboration** — have coauthors verify the author block and email addresses, review the S4/S5 tables and figures, and verify citations in `paper/`.
+2. **Optional S0 extension** — audit Backblaze SSD recency data before making any cross-era claim; current results are Alibaba-only.
 
 ## Codebase & Repository
 
 - **Primary repo**: `D:\ENGG\EL\7th sem\ISM EL` (git repository, main branch)
 - **Dashboard**: Five-page Streamlit app (`dashboard/app.py`); selected-drive pages use projected, filtered parquet reads; AppTest passes after installing `requirements-dashboard.txt`
-- **Results**: S4 claims in `paper/tables/` trace to `results/s4_results.csv`; S5 files are diagnostics and are not valid predictive benchmark evidence
+- **Results**: S4 full-population results remain separate from the valid six-family S5 temporal comparison in `results/s5_temporal_*`; old `results/s5_benchmark_*` files are invalid legacy diagnostics
 - **Tests**: 56/56 unit tests passing across ingestion → preprocessing → analytics → decision engine → evaluation → benchmarks
 - **Stack**: Python · Pandas/NumPy · SciPy/Statsmodels · Streamlit · Plotly · pytest · scikit-learn · LightGBM
 
@@ -58,7 +57,7 @@ collaboration tasks.
 ```
 drive-ssd-reliability/
 ├── data/
-│   ├── raw/                        # Alibaba dcbrain source zips
+│   ├── raw/                        # Alibaba dcbrain + Tianchi 95044 archives (not committed)
 │   ├── interim/
 │   │   ├── cached/                 # cached parquet loads
 │   │   ├── processed/              # processed outputs (s1–s5)
@@ -97,6 +96,8 @@ drive-ssd-reliability/
 | S4 mean lift @20% (multi, model weight 0.3; mean over 4 dates) | 3.02× |
 | S4 mean failure coverage @20% (multi, model weight 0.3; mean over 4 dates) | 60.4% |
 | Random baseline lift | Mean 1.000–1.001; mean within-date seed SD 0.025–0.054 across budgets (100 seeds) |
+| S5 held-out cohort | 373,511 eligible drives; 2,716 failed-drive labels; six mapped families |
+| S5 LightGBM coverage @5% / @20% | 21.58% / 63.40% (4.32× / 3.17× lift over random) |
 
 ## Research Question
 
@@ -126,8 +127,10 @@ drive-ssd-reliability/
 ```bash
 # Rebuild the primary chronological S4 results
 python scripts/run_s4_evaluation.py   # S4 chronological experiment
-# S5 is blocked on valid time-indexed telemetry; the runner exits safely by default.
-# Historical invalid diagnostics require explicit opt-in:
+# Audit the downloaded S5 archives, then run the temporal benchmark (does not rerun S0-S4)
+python scripts/audit_tianchi_s5_inputs.py
+python scripts/run_s5_temporal_benchmark.py
+# Legacy post-outcome/in-sample diagnostics require explicit opt-in and are not evidence:
 # python scripts/run_s5_benchmarks.py --run-invalid-diagnostics
 
 # Run unit tests
@@ -138,11 +141,9 @@ python -m pip install -r requirements-dashboard.txt
 streamlit run dashboard/app.py
 ```
 
-The paper package is [paper/README.md](paper/README.md). The S5 benchmark report is
-not cited as evidence: `scripts/run_s5_benchmarks.py` trains and evaluates the ML
-models on the same quarter labels and uses a 2019-12-31 SMART snapshot for failures
-after 2019-10-01. Its reported scores therefore contain direct label and temporal
-leakage. The snapshot's 18.3% failure coverage is a survivorship diagnostic, not a
-general ceiling for SMART-based methods. The exact missing files and a pre-registered
-temporal evaluation protocol are documented in
+The paper package is [paper/README.md](paper/README.md). The valid S5 comparison uses
+time-indexed July and October SMART snapshots and keeps all methods on the same six-family
+test cohort. The older `scripts/run_s5_benchmarks.py` output remains invalid because it
+uses post-outcome SMART and in-sample ML labels; do not cite those legacy metrics. The
+protocol, archive checks, and result scope are documented in
 [docs/S5_data_access_and_protocol.md](docs/S5_data_access_and_protocol.md).
