@@ -1,0 +1,24 @@
+{
+  "population": {
+    "master_rows": 965495,
+    "failed_drives": 18387,
+    "healthy_drives": 947108,
+    "in_snapshot": 706182,
+    "not_in_snapshot": 259313,
+    "located_drives": 965495,
+    "unlocated_drives": 0,
+    "eligible_at_2019-07-01_pct": 0.9885
+  },
+  "exposure_by_model": {
+    "groups": 11,
+    "groups_plateau": 0
+  },
+  "exposure_by_rack": {
+    "groups": 38090,
+    "groups_plateau": 4491
+  },
+  "exposure_by_node": {
+    "groups": 255268,
+    "groups_plateau": 124509
+  }
+}

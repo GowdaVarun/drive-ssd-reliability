@@ -21,12 +21,18 @@ from drive.preprocessing.exposure import WINDOW_START
 # History exposure ------------------------------------------------------------
 
 
-def history_exposure(drive_master: pd.DataFrame, decision_date: pd.Timestamp) -> pd.DataFrame:
+def history_exposure(
+    drive_master: pd.DataFrame,
+    decision_date: pd.Timestamp,
+    exposure_variant: str = "static",
+) -> pd.DataFrame:
     """Attach `failed_before_t` and `exposure_t` (drive-days visible at t).
 
     * drive failed before t  -> exposure = its failure-day tenure (capped at t)
     * otherwise (healthy at t, incl. failures AT t — 'not failed BEFORE t') -> exposure = days from window start to t
     """
+    if exposure_variant not in {"static", "snapshot_anchored"}:
+        raise ValueError("exposure_variant must be 'static' or 'snapshot_anchored'")
     t = pd.Timestamp(decision_date)
     out = drive_master.copy()
     ft = out["failure_time"]
@@ -34,15 +40,28 @@ def history_exposure(drive_master: pd.DataFrame, decision_date: pd.Timestamp) ->
     cap = (t.normalize() - WINDOW_START).days
     fail_day = (ft.dt.normalize() - WINDOW_START).dt.days + 1
     out["exposure_t"] = fail_day.where(out["failed_before_t"]).fillna(cap).clip(upper=cap).astype(int)
+    if exposure_variant == "snapshot_anchored":
+        # Sensitivity bound only: drives absent from the final snapshot are
+        # assigned zero exposure while still healthy at t. This uses end-state
+        # presence and must never be treated as a deployment-time predictor.
+        if "in_snapshot" not in out:
+            raise ValueError("snapshot_anchored exposure requires an in_snapshot column")
+        not_failed_before = ~out["failed_before_t"]
+        out.loc[not_failed_before & ~out["in_snapshot"].astype(bool), "exposure_t"] = 0
     return out
 
 
 # Risk tables at decision time -------------------------------------------------
 
 
-def model_risk_at(drive_master: pd.DataFrame, decision_date: pd.Timestamp, beta_drive_days: float = 730.0) -> pd.DataFrame:
+def model_risk_at(
+    drive_master: pd.DataFrame,
+    decision_date: pd.Timestamp,
+    beta_drive_days: float = 730.0,
+    exposure_variant: str = "static",
+) -> pd.DataFrame:
     """Per-model risk from history ≤ t (raw + shrunken toward the fleet rate)."""
-    exp = history_exposure(drive_master, decision_date)
+    exp = history_exposure(drive_master, decision_date, exposure_variant)
     g = (
         exp.groupby("model")
         .agg(events=("failed_before_t", "sum"), exposure=("exposure_t", "sum"))
@@ -61,9 +80,10 @@ def infra_rack_risk_at(
     decision_date: pd.Timestamp,
     model_parent: pd.Series,
     beta_drive_days: float = 730.0,
+    exposure_variant: str = "static",
 ) -> pd.DataFrame:
     """Per (model, rack) risk at t; parent = the drive model's own rate at t."""
-    exp = history_exposure(drive_master, decision_date)
+    exp = history_exposure(drive_master, decision_date, exposure_variant)
     g = (
         exp.dropna(subset=["rack_id"])
         .groupby(["model", "rack_id"])

@@ -1,0 +1,29 @@
+{
+  "exposure_variant": "snapshot_anchored",
+  "interpretation": "retrospective sensitivity bound only; uses final-snapshot presence and is not a deployment-time feature",
+  "rows": 96,
+  "decision_dates": [
+    "2019-01-01",
+    "2019-04-01",
+    "2019-07-01",
+    "2019-10-01"
+  ],
+  "random_seeds": "0..99 per decision date and budget",
+  "runtime_sec": 664.1,
+  "mean_lift_rank_correlation_with_static": 0.8322,
+  "mean_coverage_rank_correlation_with_static": 0.9652,
+  "winner_by_budget_static": {
+    "5": "infra",
+    "10": "infra",
+    "15": "infra",
+    "20": "multi_w30"
+  },
+  "winner_by_budget_snapshot_anchored": {
+    "5": "infra",
+    "10": "infra",
+    "15": "infra",
+    "20": "multi_w70"
+  },
+  "summary_file": "results/s4_exposure_sensitivity.csv",
+  "full_result_file": "results/s4_snapshot_anchored_results.csv"
+}

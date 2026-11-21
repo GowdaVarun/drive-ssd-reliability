@@ -9,9 +9,6 @@ dataset_overview_backblaze_slide.html
 methodology.png
 methodology.svg
 
-# Dev-local scripts (audit / debug / exploration runners) — stay on disk, not in repo
-scripts/
-
 # Raw and derived data -- never commit datasets (large, and source stays unchanged)
 data/raw/
 data/interim/
@@ -26,6 +23,7 @@ downloads/
 
 # Allow small bundled docs/figures if ever needed
 !**/assets/*.csv
+!paper/tables/*.csv
 
 # Python
 __pycache__/
@@ -53,11 +51,18 @@ htmlcov/
 *.yaml.bak
 
 # OS / editor
+.claude/
 .DS_Store
 Thumbs.db
 desktop.ini
 .vscode/
 .idea/
+
+# LaTeX build intermediates (keep main.pdf and manuscript sources)
+*.aux
+*.bbl
+*.blg
+*.log
 
 # Re-include published results after the wide data/CSV rules above
 !results/

@@ -11,8 +11,9 @@ how things are compared, and which terms are novel. Companion to
 
 > From ~1 million SSDs' history, learn **where failures happen** (which model, which
 > rack), then use that to pick **K drives to replace under a fixed budget** — and
-> prove, in a **fair, time-ordered test**, that this beats both random picking and
-> the industry's usual SMART-based methods.
+> compare historical model/rack rankings with random selection in a fair,
+> time-ordered test. The available SMART snapshot does not support a valid
+> predictive benchmark.
 
 Analogy: a **medical screening trial**. You may only use *past* data to decide *today*
 who gets the treatment (replacement), and you check *tomorrow* to see who actually got
@@ -27,7 +28,7 @@ sick. "Yesterday decides today, tomorrow judges today" is the backbone of every 
 | S2 | Raw rates vs shrunk rates; assumptions vs rankings | Sensitivity (rank stability ρ) |
 | S3 | Strategies' *processes* | Fairness contract (same pool, same K, deterministic) |
 | S4 | Strategies' *outcomes* | Coverage / precision / **lift** over a 100-seed random distribution |
-| S5 | DRIVE vs industry & literature methods | Same protocol, same metrics + honest leakage labeling |
+| S5 | Benchmark validity and related work | Literature positioning complete; held-out SMART/ML benchmark remains open |
 
 Everything funnels to one number style — **lift at equal budget** — and one
 discipline — **never let tomorrow's information into today's decision**.
@@ -191,9 +192,10 @@ compared to random at the same budget? → the paper's headline numbers.
 > never 0 (0 would fake a perfect score). Event counts sit beside every metric.
 
 **Random baseline as a distribution 🔑:** 100 seeds (0–99) → random lift
-**1.000 ± 0.003** — (a) honest comparison against *randomness itself*, not one lucky
-draw; (b) pipeline validation (random landing exactly at 1.00 proves the machinery
-is unbiased).
+mean 1.000–1.001 across dates. The mean within-date standard deviation across seeds
+is 0.054, 0.037, 0.031, and 0.025 at 5%, 10%, 15%, and 20% budgets, respectively.
+This is the expected sampling variation of random selection; the mean near 1.0 is the
+sanity check.
 
 **Grid:** 4 decision dates × 6 variants × 4 budgets = 96 cells. One good number is
 cherry-picking; a grid is evidence.
@@ -202,16 +204,16 @@ cherry-picking; a grid is evidence.
 
 | Variant | @5% | @10% | @15% | @20% | Coverage @20% |
 |---|---|---|---|---|---|
-| Random (100 seeds) | 1.00 | 1.00 | 1.00 | 1.00 | 12.5% |
+| Random (100 seeds) | 1.00 | 1.00 | 1.00 | 1.00 | 20.0% |
 | Model-aware | 1.35 | 1.55 | 2.12 | 2.55 | 51.0% |
 | **Infra-aware** | **3.74** | **3.46** | **3.06** | 2.85 | 57.1% |
 | Multi 70:30 | 1.77 | 2.22 | 2.72 | 2.98 | 59.7% |
 | Multi 50:50 | 1.82 | 2.22 | 2.72 | 2.99 | 59.7% |
 | **Multi 30:70** | 2.62 | 2.28 | 2.76 | **3.02** | **60.4%** |
 
-**Reading:** random = 1.00 validates the experiment; infra-aware wins tight budgets
+**Reading:** random mean lift near 1.00 validates the metric; infra-aware wins tight budgets
 (3.74× @5%; best single cell 6.37× at 2019-10-01/5%); multi 30:70 wins at 20%
-(3.02×, 60.4% coverage vs random 12.5%); model-aware weakest but still > random
+(3.02×, 60.4% coverage vs random 20.0%); model-aware weakest but still > random
 (the 20× AFR spread is real). The three multi weights track each other → the
 "blend helps at high budget" conclusion is weight-robust.
 
@@ -246,54 +248,21 @@ budget-aware? infra-aware?):
 > Integrity note: a scoped Meta ASPLOS'24 reference could not be verified and was
 > **dropped** (no-unverified-citations rule).
 
-### S5.2 — Empirical comparison (`src/drive/benchmarks/`, `results/s5_benchmark_*`)
+### S5.2 — Exploratory benchmark (not valid performance evidence)
 
-**Baselines:** SMART-threshold (Backblaze-style, raw error counters), pooled
-Logistic Regression, pooled LightGBM (model one-hot; per-family training infeasible
-with 1–50 positives — documented deviation). Same population, budgets, metrics as S4.
+The S5 script compares a Backblaze-style SMART threshold, logistic regression, and
+LightGBM on a snapshot-present subset. Audit found two validity problems: the SMART
+snapshot is dated 2019-12-31, after the Q4 outcome window, and the ML models are fit
+and scored on the same Q4 failure labels. The threshold score is therefore a
+post-outcome diagnostic; the ML scores additionally contain direct target leakage.
+Do not present these values as held-out performance, upper bounds, or evidence that
+SMART prediction is infeasible.
 
-**The wall that became a headline finding:**
-
-> 🔑 **The 18.3% oracle ceiling.** The dataset has ONE SMART snapshot dated
-> 2019-12-31 (after the outcome window), and only **569 of 3,104** Q4-failed drives
-> appear in it — **id-rotation** removes failed drives' IDs from telemetry. A
-> real-time SMART system on this fleet is structurally blind to 81.7% of failures.
-> A leakage-free SMART-feature baseline is therefore *impossible* on this dataset —
-> which *justifies* DRIVE's ticket+topology approach.
-
-**The labeled three-way story (2019-Q4 window):**
-
-| Method | Lift @5% | Coverage @5% | Label |
-|---|---|---|---|
-| DRIVE infra-aware | **7.45×** | 37.3% | leakage-free |
-| DRIVE multi 30:70 | 4.75× | 23.7% | leakage-free |
-| SMART-threshold | 9.84× | 49.2% | leaky upper bound |
-| LogReg | 17.2× | 85.8% | leaky upper bound |
-| LightGBM | 18.1× | **90.3%** | leaky upper bound |
-
-> 🔑 **Leaky upper bound:** baselines may use telemetry dated *after* the failures
-> they are judged on (reading the answer key). LightGBM's 90% is not achievable in
-> reality — it is the **quantified size of the overclaim** a naive analysis would
-> report (naive says 18×, honest ≤7×). Drive-risk tables correctly come from the
-> FULL failure-ticket history; the snapshot-restricted master has ZERO pre-t
-> failures (15,283 → 0) — documented diagnostic.
-
-**Bugs caught before results were trusted (honesty receipts):**
-1. Backblaze ">0" rule fired on ~100% of drives — normalized `n_*` attributes use
-   **100 = healthy** semantics; the trip rule was switched to **raw** counters
-   (failing r_5 p99 = 4,424 vs healthy 9).
-2. An index-alignment bug made all three baselines byte-identical and
-   anti-predictive (2/569); fixed by keeping population row-position as the frame
-   index.
-
-**Viva one-liner:** *"On this dataset, SMART telemetry cannot support a leakage-free
-per-drive baseline at all — we prove why (id-rotation + post-window snapshot, 18.3%
-ceiling), quantify the bias a naive analysis would incur (18× vs 7×), and show that
-ticket+topology group-risk still delivers 3–7× over random at equal budget with
-full explainability."*
-
----
-
+The 569 of 3,104 failures present in the snapshot (18.3%) is the overlap for this
+selected set and period only. It is not a general ceiling: different temporal SMART
+data and identity-linkage policies could change the overlap. S5 performance comparison
+remains incomplete until pre-decision features and a temporally held-out protocol are
+available. The paper package excludes all S5 scores from its claims.
 ## Where ML is (and is not) used
 
 - **S0–S4: no ML anywhere.** DRIVE's scores are statistics — empirical-Bayes
@@ -302,8 +271,8 @@ full explainability."*
   (3) leakage discipline is trivial to enforce; (4) the claim is *decision support*,
   not a new predictor. The only knobs are β (sensitivity-checked) and w (three
   candidates evaluated, none "learned").
-- **S5.2: ML appears — as the competitor, not the engine** (LogReg, LightGBM). Its
-  apparent superiority (90% coverage) is itself a leakage artifact we quantify.
+- **S5.2: ML experiment exists but is invalid for comparison** because it fits and
+  scores on the same labels. Those scores are excluded from research claims.
 
 ---
 

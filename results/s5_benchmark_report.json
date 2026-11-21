@@ -12,17 +12,13 @@
     "snapshot_eligible": 703292,
     "failures_after_t_full": 3104,
     "failures_after_t_snapshot": 569,
-    "oracle_ceiling_snapshot_coverage": 0.1833,
-    "id_rotation_note": "81.7% of the window's failed drives are absent from the 2019-12-31 snapshot (S1 anomaly #3)"
+    "id_rotation_note": "Only 18.3% of window failures appear in the 2019-12-31 snapshot; this is a selected-population diagnostic, not a general ceiling.",
+    "snapshot_failure_overlap": 0.1833
   },
   "baselines": {
     "smart_threshold": "Backblaze-style classic-5 rule (attrs 5/187/196/197/198 > 0), tripped-count ranking",
     "ml_logreg": "pooled LogisticRegression(class_weight=balanced), model one-hot, median imputation",
     "ml_gbdt": "pooled LightGBM(300 trees, lr=0.05, scale_pos_weight), model one-hot, native NaN"
-  },
-  "leakage_labels": {
-    "leakage-free": "DRIVE strategies + random: inputs strictly from history <= t",
-    "leaky-upper-bound": "SMART-feature baselines: features dated 2019-12-31 (after the outcome window)"
   },
   "max_lift_by_strategy": {
     "infra": 7.452,
@@ -45,10 +41,13 @@
     "smart_threshold": 0.7351
   },
   "random_lift_by_budget": {
-    "NaN": 1.008,
-    "NaN": 1.001,
-    "NaN": 1.005,
     "NaN": 1.0
   },
-  "runtime_sec": 216.7
+  "runtime_sec": 216.7,
+  "validity_labels": {
+    "leakage-free": "DRIVE strategies + random use pre-decision history but only on the snapshot-present population",
+    "post-outcome-diagnostic": "SMART threshold uses 2019-12-31 features after the Q4 2019 outcome window",
+    "invalid-in-sample": "ML models are fit and scored on the same Q4 2019 failure labels and use post-outcome features"
+  },
+  "benchmark_validity": "No SMART or ML performance value is a valid held-out prediction estimate; exclude these scores from comparative claims."
 }

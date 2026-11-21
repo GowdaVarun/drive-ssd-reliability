@@ -1,0 +1,313 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{array}
+\usepackage{graphicx}
+
+\title{Historical Group Risk for Budget-Constrained SSD Maintenance Prioritisation}
+
+\author{
+\IEEEauthorblockN{Sumedh Udupa U}
+\IEEEauthorblockA{Department of Computer Science\\
+R. V. College of Engineering\\Bengaluru-560059, India\\
+sumedhu.cs23@rvce.edu.in}
+\and
+\IEEEauthorblockN{Syed Muzammil Hussaini}
+\IEEEauthorblockA{Department of Computer Science\\
+R. V. College of Engineering\\Bengaluru-560059, India\\
+syedmuzammilh.cs23@rvce.edu.in}
+\and
+\IEEEauthorblockN{Varun Gowda R}
+\IEEEauthorblockA{Department of Computer Science\\
+R. V. College of Engineering\\Bengaluru-560059, India\\
+varungowdar.cs23@rvce.edu.in}
+\and
+\IEEEauthorblockN{Prapulla S. B.}
+\IEEEauthorblockA{Department of Computer Science\\
+R. V. College of Engineering\\Bengaluru-560059, India\\
+prapullasb@rvce.edu.in}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Data-centre operators must decide which devices to inspect or replace when
+maintenance capacity is limited. We study a transparent decision-support method that
+uses historical failure rates for SSD models and racks to rank eligible drives under
+an explicit device-count budget. The primary ranking uses failure tickets, fleet
+inventory, and rack assignments; it does not use SMART attributes. Using the Alibaba
+SSD reliability dataset, we compare
+model-aware, rack-aware, and weighted multi-factor rankings with random selection in
+a chronological evaluation at four decision dates and four budgets. Across the four
+dates, the rack-aware strategy captures a mean 18.7\% of subsequent failures at a 5\%
+budget (3.74$\times$ mean lift over random). At a 20\% budget, the multi-factor
+strategy with model weight 0.3 captures a mean 60.4\% of subsequent failures (3.02$\times$
+mean lift). These are retrospective group-risk prioritisation results, not individual
+failure probabilities or causal estimates of maintenance benefit. An attempted SMART
+and machine-learning comparison is excluded: the available SMART snapshot postdates
+the outcome window, and the implemented ML benchmark trains and scores on the same
+labels. The results therefore support a careful comparison of historical group-risk
+rankings, while leaving a temporally valid telemetry benchmark for future work.
+\end{abstract}
+
+\begin{IEEEkeywords}
+SSD reliability, maintenance prioritisation, data centres, failure analysis,
+resource allocation, explainability
+\end{IEEEkeywords}
+
+\section{Introduction}
+Storage operators manage large fleets whose failures are not evenly distributed
+across device models and physical infrastructure. Prior field studies describe SSD
+failure characteristics and spatial correlations at scale~\cite{maneas2020,han2021}.
+Prediction work also uses device telemetry to estimate drive-level failure risk~\cite{lu2020}.
+Yet a maintenance team must still convert evidence into a finite inspection or
+replacement list. That step has a capacity constraint: only a fraction of the fleet can
+be handled during one maintenance cycle.
+
+This paper evaluates a simple decision-support approach that ranks eligible drives
+using historical failure rates for their model and rack. It asks: under the same
+maintenance-capacity budget, do infrastructure-aware and multi-factor rankings capture
+more subsequent failures than model-aware or random selection? The contribution is an
+equal-budget, chronological comparison of interpretable group-risk rankings on one
+large SSD fleet. The work is not an individual-drive failure predictor: the score
+assigned to a drive is derived from its group's past failures.
+
+\section{Related Work}
+Large-scale studies have documented failure patterns in hard drives and SSDs, including
+the reliability of enterprise deployments~\cite{pinheiro2007,maneas2020} and correlated
+failures in production SSD racks and nodes~\cite{han2021}. Other work investigates
+telemetry-based failure prediction~\cite{lu2020}; operational SSD studies also examine
+fail-stop and fail-slow behavior~\cite{lu2022}. These studies establish the importance
+of both device signals and infrastructure context. DRIVE addresses a narrower question:
+how historical model- and rack-level rates behave as an explainable ranking when the
+number of selected drives is fixed. We make no priority claim that this is the first
+such method.
+
+\section{Data and Method}
+\subsection{Dataset and Cohort}
+The analysis uses the Alibaba SSD failure tickets and location records released with
+the production reliability study~\cite{han2021}. Device identity is the pair
+$(\text{model},\text{disk\_id})$, since disk identifiers repeat across model namespaces.
+The primary cohort is reconstructed from the location inventory and failure tags. The
+local SMART file is a separate one-day snapshot; its attribute values are not used to
+build DRIVE scores. The pipeline reports 965,495 unique drives, 18,387 failure events,
+and 11 models over the 2018--2019 observation interval. The main S4 evaluation uses
+decision dates 2019-01-01, 2019-04-01, 2019-07-01, and 2019-10-01. For each date $t$,
+history uses events strictly before $t$, and outcomes are failures strictly after $t$
+through 2019-12-31. The four outcome windows overlap and are not independent
+replications. Their failure counts are 12,143, 10,124, 7,239, and 3,104, respectively.
+
+\subsection{Historical Group Rates}
+For a group with $k$ observed failures and $E$ accumulated drive-days, we use a
+Gamma--Poisson posterior mean shrunk toward a parent rate $\theta_p$:
+\begin{equation}
+ \widehat{\lambda}=\frac{k+\beta\theta_p}{E+\beta},\qquad \beta=730\text{ drive-days}.
+\end{equation}
+Model rates shrink toward the fleet rate. Rack rates are estimated within model and
+shrink toward that model's rate. Per-drive deployment dates are unavailable, so the
+primary exposure estimate assumes a static fleet over the two-year observation window;
+failed drives contribute exposure through their failure day. At each decision date,
+event counts, exposure, and parent rates are recomputed from the history available
+strictly before that date.
+Drive-level scores are therefore group rates; they are not calibrated probabilities
+that a particular drive will fail.
+
+\subsection{Ranking Strategies and Budgets}
+The comparison includes random, model-aware, infrastructure-aware, and multi-factor
+strategies. The multi-factor score is
+\begin{equation}
+ S(d)=wR_m(d)+(1-w)R_r(d),\quad w\in\{0.7,0.5,0.3\},
+\end{equation}
+where $R_m$ and $R_r$ are min--max normalised model and model--rack historical rates.
+For budget $B\in\{5,10,15,20\}\%$, each strategy selects
+$K=\lfloor BN/100\rfloor$ drives from its eligible population. Deterministic
+tie-breaking uses model and drive identifier; random selection is repeated for 100
+seeds (0--99). Selected records have explanatory strings identifying the group rates
+that determined their rank. The eligibility rule excludes drives with a known failure
+strictly before $t$; failure-at-$t$ drives remain eligible. All drives in this dataset
+have rack assignments, so every strategy has the same eligible population and $K$.
+
+\subsection{Metrics}
+Failure coverage is the fraction of subsequent failures in the selected set. Precision
+is the fraction of selected drives that fail in the outcome window. Lift is coverage
+divided by the selected budget share. For the headline table, each metric is calculated
+for each decision date and then averaged arithmetically over the four dates. Random
+values are the mean of 100 draws per date and budget. The four date-specific evaluation
+windows share later calendar periods. Accordingly, date averages are descriptive
+summaries rather than independent-sample estimates; we do not report significance tests
+or interpret the four dates as independent trials.
+The mean random lift is 1.000--1.001 across dates. Mean within-date standard deviation
+across the 100 random draws is 0.054, 0.037, 0.031, and 0.025 at 5\%, 10\%, 15\%, and
+20\% budgets, respectively.
+
+\section{Experimental Results}
+Table~\ref{tab:headline} reports means across the four decision dates. At 5\%,
+infrastructure-aware selection has the highest lift (3.74$\times$) and covers 18.7\%
+of subsequent failures on average. At 20\%, the multi-factor strategy with $w=0.3$
+has the highest mean lift among the tested risk rankings (3.02$\times$) and covers
+60.4\%. The model-aware ranking also exceeds random selection at each budget on
+average. The random baseline has mean lift approximately one, as expected under the
+metric definition.
+
+\begin{table}[t]
+\caption{Mean S4 results over four decision dates. Coverage and precision are fractions.}
+\label{tab:headline}
+\centering
+\small
+\begin{tabular}{llrrr}
+\toprule
+Strategy & $w$ & Budget & Lift & Coverage \\
+\midrule
+Random & -- & 5\% & 1.00 & 0.050 \\
+Model & -- & 5\% & 1.34 & 0.067 \\
+Rack & -- & 5\% & \textbf{3.74} & \textbf{0.187} \\
+Multi & 0.7 & 5\% & 1.77 & 0.088 \\
+Multi & 0.5 & 5\% & 1.82 & 0.091 \\
+Multi & 0.3 & 5\% & 2.62 & 0.131 \\
+\midrule
+Random & -- & 20\% & 1.00 & 0.200 \\
+Model & -- & 20\% & 2.55 & 0.510 \\
+Rack & -- & 20\% & 2.85 & 0.571 \\
+Multi & 0.7 & 20\% & 2.98 & 0.597 \\
+Multi & 0.5 & 20\% & 2.99 & 0.597 \\
+Multi & 0.3 & 20\% & \textbf{3.02} & \textbf{0.604} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{figures/study_workflow.png}
+\caption{Chronological workflow. Risk scores are constructed from pre-decision history;
+subsequent failure events are used only for evaluation.}
+\label{fig:workflow}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/s4_coverage_budget.png}
+\caption{Mean failure coverage across four decision dates by maintenance budget.}
+\label{fig:coverage}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/s4_lift_budget.png}
+\caption{Mean lift over random across four decision dates by maintenance budget.}
+\label{fig:lift}
+\end{figure}
+
+The best strategy depends on capacity: rack-level risk is most effective at the
+tightest evaluated budget, while the multi-factor ranking with greater rack emphasis
+performs best at 20\%. The exact values for all strategies, weights, and budgets are
+included in \texttt{tables/headline\_results.csv}; the complete 96-row output is included in
+\texttt{tables/s4\_results.csv}.
+
+We also reran the complete grid under a snapshot-anchored exposure bound. In this
+sensitivity analysis, drives absent from the final SMART snapshot contribute zero
+exposure while still healthy at the decision date. This assumption uses future
+end-state presence and is not available to an operator at decision time; it is reported
+only as a retrospective bound. The winning broad strategy is unchanged at each budget,
+but the 20\% multi-factor winner changes from $w=0.3$ to $w=0.7$. Across strategy and
+budget cells, primary and sensitivity mean lifts have Spearman correlation 0.832, while
+mean coverage has correlation 0.965. The reductions in absolute lift and coverage show
+that effect sizes are sensitive to the missing deployment-tenure information.
+Table~\ref{tab:exposure-sensitivity} reports the primary and sensitivity winners and
+their four-date mean scores at each budget.
+
+\begin{table*}[t]
+\caption{Primary and snapshot-anchored sensitivity results for the best risk ranking at each budget. The sensitivity uses end-of-window snapshot presence and is not a decision-time estimate.}
+\label{tab:exposure-sensitivity}
+\centering
+\small
+\begin{tabular}{rlrrlrr}
+\toprule
+Budget & Primary winner & Lift & Coverage & Sensitivity winner & Lift & Coverage \\
+\midrule
+5\%  & Rack & 3.74 & 18.7\% & Rack & 2.56 & 12.8\% \\
+10\% & Rack & 3.46 & 34.6\% & Rack & 2.68 & 26.8\% \\
+15\% & Rack & 3.06 & 45.9\% & Rack & 2.69 & 40.4\% \\
+20\% & Multi ($w=0.3$) & 3.02 & 60.4\% & Multi ($w=0.7$) & 2.80 & 56.0\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{SMART Benchmark Validity}
+The project also contains an exploratory S5 output, but it is not included as
+comparative evidence. Its SMART snapshot is dated 2019-12-31, after the Q4 2019 outcome
+period used for the benchmark. In addition, the ML implementation fits its classifiers
+and scores the same drives using the same Q4 failure labels. This creates temporal
+feature leakage for the threshold rule and direct target leakage for the ML models.
+Consequently, the reported S5 scores cannot estimate prospective performance. The
+snapshot's 569 failures among 3,104 full-population failures (18.3\%) describes
+snapshot overlap under this dataset's drive identity turnover; it is not a general
+upper bound on telemetry methods.
+A separate Alibaba release contains daily SMART records for six SSD model families
+and failure labels~\cite{xu2021}; those time-series archives are needed for a valid
+held-out S5 benchmark and are not included in the current analysis package.
+
+\subsection{Illustrative Selection Explanation}
+At the 2019-07-01 decision date and 5\% budget, the highest-ranked rack example is
+drive (A3, 35691) in rack 18670. Its model and rack rates are historical group rates
+available at that date. The multi-factor score combines their normalized values, and
+the explanation exposes both components. These values justify the rank under the
+specified rule; they are not an estimate of that drive's individual failure probability.
+
+\begin{table}[t]
+\caption{Computed rank-1 examples at 2019-07-01, 5\% budget. Rates are per drive-day.}
+\label{tab:explanation-example}
+\centering
+\scriptsize
+\begin{tabular}{p{1.5cm}p{1.7cm}p{3.1cm}r}
+\toprule
+Strategy & Drive & Group evidence & Score \\
+\midrule
+Model & C2 / 0 & Model rate $6.966\times10^{-5}$; norm 1.000 & 1.000 \\
+Rack & A3 / 35691 & Rack 18670 rate $2.996\times10^{-3}$; norm 1.000 & 1.000 \\
+Multi $w=0.3$ & A3 / 35691 & Model $5.859\times10^{-5}$ (norm 0.832); rack $2.996\times10^{-3}$ (norm 1.000) & 0.950 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Discussion}
+These results suggest that rack history can be useful when only a small share of the
+fleet can be selected, while combining model and rack information may improve
+coverage at a larger budget. This comparison concerns one historical dataset and four
+decision dates. It does not establish that maintenance based on these rankings
+prevents failures, reduces cost, or improves future fleet reliability. It also does
+not demonstrate superiority to leakage-free SMART prediction; the current snapshot
+does not support that comparison.
+
+The design is intentionally interpretable: each choice can be traced to a model or
+rack group's past rate. This makes the ranking inspectable, but it also means that
+drives sharing a group receive similar group-risk signals. The score should be used
+for prioritisation or investigation, not as an individual failure probability.
+
+\section{Limitations and Future Work}
+First, the study is retrospective and uses a single operator dataset from 2018--2019.
+Second, the rate estimator assumes static exposure over parts of the observation
+period; reported rates and rankings should not be read as calibrated time-varying
+hazards. Third, failure tickets may not capture every operational failure mode.
+Fourth, results depend on group definitions, smoothing strength, and the tested
+multi-factor weights. Fifth, maintenance costs and intervention outcomes are absent,
+so the budget represents a drive-count capacity, not a monetary cost. Finally, a valid
+telemetry baseline requires time-indexed SMART features available before each decision
+date and strict train/test separation by time. Acquiring such data, evaluating on
+additional fleets, and testing whether selected interventions change outcomes are
+future work.
+
+\section{Conclusion}
+We compared chronological model-, rack-, and multi-factor historical group-risk
+rankings under equal drive-count budgets. The four-date results show a 3.74$\times$
+mean lift for rack-aware selection at a 5\% budget and a 3.02$\times$ mean lift for
+the $w=0.3$ multi-factor ranking at 20\%. These results support historical group-risk
+ranking as a transparent maintenance decision aid in this evaluation setting. They
+do not establish individual failure prediction or benefit over a valid telemetry
+predictor. Future comparisons need genuinely pre-decision telemetry and held-out
+temporal evaluation.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+\end{document}

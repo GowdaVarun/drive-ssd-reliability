@@ -8,14 +8,15 @@ for the remaining stages (S2–S7). Read with `DRIVE_Implementation_Plan.md` ris
 | # | Anomaly | Affects stages | Status | Mitigation |
 |---|---|---|---|---|
 | 1 | Extreme failure concentration (C1: 20.7% of fleet → 57.2% of failures) | S3/S4 results; S7 claims | None needed | It is the signal, not a defect. Guard: never present it as "we found an anomaly", present as study objective |
-| 2 | 27% of healthy drives absent from the final-day snapshot (no retire dates) | S1 exposure ✗done; S2 priors; S4 stability; S6 Page 1; S7 limitations | Mitigation coded, sensitivity pending | (a) master treats `location` as population — already in `build_drive_master`; (b) dashboard Page 1 shows "27% drives without final-day snapshot" honestly; (c) S4 runs a **tenure-bounds sensitivity check** (see below) |
-| 3 | SMART snapshot contains failed drives with post-hoc last-known values; only 284/3,459 failures are Dec-2019 → snapshot ≠ "healthy census on 2019-12-31" | S5.2 baselines; S6 SMART views | Policy coded, baseline design pending | Snapshot demoted to support data only. Rule-based/ML baselines get SMART time series from **Tianchi 95044** (all models map by serial number to dcbrain ids). If 95044 stays unavailable: baselines are evaluated **only at decision date 2019-12-31** on present-and-never-failed drives, labelled as last-known values — the honest fallback |
+| 2 | 27% of healthy drives absent from the final-day snapshot (no retire dates) | S1 exposure; S2 priors; S4 stability; S6 Page 1; S7 limitations | Cohort policy documented; alternate-exposure sensitivity saved; actual tenure remains unknown | `location` defines the primary fleet; the dashboard discloses snapshot absence; S4 compares static and snapshot-anchored bounds. Neither bound recovers true deployment dates. |
+| 3 | SMART snapshot contains failed drives with post-hoc last-known values; only 284/3,459 failures are Dec-2019 → snapshot ≠ "healthy census on 2019-12-31" | S5.2 baselines; S6 SMART views | Snapshot demoted; temporal baseline pending data access | Do not report predictive scores from the one-day snapshot. Obtain **Tianchi 95044** daily SMART and labels; only then evaluate pre-decision features with a temporal split. A 2019-12-31 cross-section is not a fallback predictive benchmark because there are no later outcomes in the primary data. |
 | 4 | Id-rotation on replacement: 9,527 same-slot second disk_ids within a model; snapshot contains 3,459 failed ids with differing values | S3 eligibility; S4 leakage tests | Mitigated | `eligible_at()` keeps ids permanently ineligible post-failure (conservative upper bias < 18,387 slots, ~1.9% of fleet). Leakage tests in S4 must verify *no failure knowledge after t* enters ranking |
-| 5 | Static-window AFRs understate true drive-day AFR by ×2.3–3.3 (uniform-ish across models) | S2 all rate tables; S6 Page 2 labels; S7 results | Labelling coded in model doc; sensitivity pending | (a) Every AFR output labelled "static-assumption annualized"; ratio/rank statements preferred over absolute values; (b) **dual exposure sensitivity** in S2/S4: exposure_v1 = full-window static (current primary), exposure_v2 = snapshot-anchored (healthy drives present at end; failed drives tenure to failure time). Verify strategy *rankings* and lift agree under both — if yes, exposure bias cannot flip conclusions |
+| 5 | Static-window AFRs understate true drive-day AFR by ×2.3–3.3 (uniform-ish across models) | S2 all rate tables; S6 Page 2 labels; S7 results | Caveat labelled; alternate exposure sensitivity saved | AFRs remain labelled "static-assumption annualized". S2 and S4 include dual-exposure analyses; strategy order is broadly similar, while effect sizes and the 20% multi-factor weight are exposure-sensitive. |
 
-Root cause of anomalies 2 and 5 is the same missing fact: **per-day presence**. One artifact
-(Tianchi 95044 daily SMART, ids join by design) fixes both quantitatively. Priority: HIGH,
-acquire via Tianchi student access early in S2/S3 rather than later.
+Root cause of anomalies 2 and 5 is the same missing fact: **per-day presence**. Tianchi
+95044 daily SMART may help quantify both, subject to schema and identifier validation;
+the archive is not present locally. Access, validation, and any updated exposure
+sensitivity remain open work rather than completed project results.
 
 ## Already encoded in implementation
 
@@ -25,17 +26,25 @@ acquire via Tianchi student access early in S2/S3 rather than later.
 - `ingestion` — `load_smart_snapshot` docstring carries the contamination caveat so any
   future consumer sees the warning at the API surface; policy enforcement is by review + tests
 
-## Outstanding mitigations to implement
+## Mitigation status and remaining checks
 
-1. **S2:** dual exposure variants + sensitivity report (anomaly 5)
-2. **S3:** do not feed the 3,459 snapshot-resident failed ids into any score (anomaly 3+4);
-   eligibility test must assert this
-3. **S4:** leakage test = ranking at t only uses failure events with `failure_time < t` and
-   group stats built from history ≤ t (plan requirement) + ranking stability under
-   exposure_v1 vs exposure_v2
-4. **S6:** Page 1 shows snapshot absence (27%) and tenure assumption as data-quality text;
-   Page 2 labels AFR "static-assumption annualized"; Page 4 caveats box lists anomalies
-5. **S7 limitations:** copy of anomalies 2, 3, 4, 5 with the ×2.3–3.3 quantification
+1. **S2/S4 exposure sensitivity:** both exposure variants are implemented and
+   unit-tested. S2 rack rank correlation is 0.917 across exposure variants; prior-grid
+   correlations versus β=730 are 0.9986 (β=365) and 0.9916 (β=3650). The full 96-row
+   alternate S4 grid is saved in `results/s4_snapshot_anchored_results.csv`; its
+   summary is `results/s4_exposure_sensitivity.csv`. Winner labels by budget remain
+   infra at 5–15%, while the 20% multi-factor winner changes from model weight 0.3 to
+   0.7. Mean lift ranks correlate 0.832 across tested cells. This supports the broad
+   strategy pattern but shows the effect sizes and chosen weight are exposure-sensitive.
+2. **S3/S4 temporal integrity:** decision-engine history is rebuilt per date using
+   events strictly before the decision date; the available SMART snapshot is used for
+   cohort/context only, never as historical predictive features. The S5 SMART/ML
+   comparison remains invalid and is excluded from claims pending time-indexed data.
+3. **S6:** all five dashboard pages are implemented and smoke-tested. The overview
+   discloses snapshot absence and static assumptions; the comparison page explicitly
+   excludes invalid S5 scores.
+4. **S7:** manuscript limitations should preserve anomalies 2–5 and the ×2.3–3.3
+   exposure caveat. Coauthor review remains open.
 
 ## Residual risk (unavoidable, to be stated honestly)
 

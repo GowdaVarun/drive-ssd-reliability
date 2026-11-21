@@ -14,13 +14,11 @@ population, budgets and metrics as the S4 experiment:
    infeasible; documented deviation from the plan's per-family wording).
    LightGBM handles NaN natively; LogReg uses per-model median imputation.
 
-LEAKAGE LABEL (plan honesty rule — the one-day snapshot is dated 2019-12-31,
-AFTER the 2019-Q4 outcome window it is used to rank for):
-    baselines are an UPPER-BOUND (leaky) benchmark, reported separately from
-    the leakage-free S4 protocol table, never mixed into its lift claims.
-Additionally, failure-driven id-rotation (S1 anomaly register #3) removes
-81.7% of the window's failed drives from the snapshot → the SMART-feature
-baselines carry a hard oracle ceiling: coverage ≤ |F ∩ snapshot| / |F|.
+VALIDITY NOTE: the one-day snapshot is dated 2019-12-31, after the 2019-Q4
+outcome window. Threshold results are post-outcome diagnostics. The ML helper
+also fits and scores on the same labels and is invalid for held-out performance
+claims. These scores must not be treated as upper bounds or merged with S4.
+Snapshot failure overlap is cohort-specific and is not a general SMART ceiling.
 """
 from __future__ import annotations
 

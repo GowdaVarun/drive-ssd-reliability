@@ -1,0 +1,22 @@
+{
+  "beta_main": 730.0,
+  "beta_grid": [
+    365.0,
+    730.0,
+    3650.0
+  ],
+  "concentration": {
+    "top10_rack_share_of_events_pct": 0.88
+  },
+  "racks_total": 38090,
+  "racks_low_exposure": 0,
+  "spearman_rack_v1_vs_v2_beta730": 0.9173463309255382,
+  "spearman_rack_beta365_vs_beta730": 0.9986183882412912,
+  "spearman_rack_beta730_vs_beta730": 1.0,
+  "spearman_rack_beta3650_vs_beta730": 0.9916492951409998,
+  "node_groups": 255268,
+  "node_groups_single_drive": 124509,
+  "rack_groups_single_drive": 4491,
+  "model_rank_stability_v1_v2": 0.8090909090909091,
+  "top10_racks_share_of_events_pct": 0.88
+}

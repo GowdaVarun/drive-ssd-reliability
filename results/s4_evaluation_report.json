@@ -19,9 +19,10 @@
     ],
     "random_seeds": 100,
     "seed_list": "0..99",
-    "lift_definition": "captured failure share / budget share = (|S\u2229F| / |F|) / (K/N)"
+    "lift_definition": "captured failure share / budget share = (|S\u2229F| / |F|) / (K/N)",
+    "exposure_variant": "static (primary; no per-drive deployment dates available)"
   },
-  "runtime_sec": 814.5,
+  "runtime_sec": 585.9,
   "rows": 96,
   "max_lift_by_strategy": {
     "infra": 5.451,

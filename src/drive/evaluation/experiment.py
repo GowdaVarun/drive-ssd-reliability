@@ -46,12 +46,19 @@ def chronological_experiment(
     random_seeds: int = 100,
     beta_drive_days: float = 730.0,
     base_seed: int = 0,
+    exposure_variant: str = "static",
 ) -> pd.DataFrame:
     rows: list[dict] = []
 
     for t in decision_dates:
-        mr = model_risk_at(drive_master, t, beta_drive_days=beta_drive_days)
-        ir = infra_rack_risk_at(drive_master, t, mr.set_index("model")["shrunk_rate"], beta_drive_days=beta_drive_days)
+        mr = model_risk_at(
+            drive_master, t, beta_drive_days=beta_drive_days,
+            exposure_variant=exposure_variant,
+        )
+        ir = infra_rack_risk_at(
+            drive_master, t, mr.set_index("model")["shrunk_rate"],
+            beta_drive_days=beta_drive_days, exposure_variant=exposure_variant,
+        )
         scores = build_scores(drive_master, t, mr, ir)
         fail_after = _aligned_failure_mask(scores, drive_master, t)
         f_total = int(fail_after.sum())

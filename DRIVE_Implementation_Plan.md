@@ -22,9 +22,9 @@ stage below preserves that framing.
 | S2 | Historical failure analytics | Model/infrastructure risk tables | S1 | Weeks 5–7 | ✅ done |
 | S3 | Maintenance decision engine | 4 strategies + rankings + explanations | S2 | Weeks 7–9 | ✅ done |
 | S4 | Chronological evaluation | Coverage/precision/lift tables across budgets | S3 | Weeks 9–11 | ✅ done |
-| S5 | Benchmarking vs existing approaches | Novelty evidence: concept matrix + empirical baselines | S4 | Weeks 11–13 | ✅ done |
-| S6 | Dashboard & final results | Streamlit dashboard matching experiment outputs | S4 (S5 for comparison page) | Weeks 12–14 | 🚧 built locally, unpublished (redesign pending) |
-| S7 | Research paper draft | Full manuscript + reproducibility package | S5, S6 | Weeks 13–16 | 🚧 next (critical deliverable) |
+| S5 | Benchmarking vs existing approaches | Related-work matrix + valid held-out baselines | S4 | Weeks 11–13 | ⚠️ partial: literature matrix done; SMART/ML diagnostics invalid for predictive claims |
+| S6 | Dashboard & final results | Streamlit dashboard matching experiment outputs | S4 | Weeks 12–14 | ✅ implemented; all five AppTest pages pass |
+| S7 | Research paper draft | Manuscript + collaboration bundle | S4, literature review | Weeks 13–16 | 🚧 draft bundle created in `paper/`; coauthor review pending |
 
 Timeline is week-relative (≈16 weeks); compress/stretch to the actual semester calendar.
 Do not start S6 UI work before S4 outputs exist (handover §17, mistake #14). — *S4
@@ -38,9 +38,9 @@ outputs exist as of commit `7166eb2`; S6 is now unblocked.*
 | `7166eb2` | — | S3–S4 | `decision_engine/` + `evaluation/`; S3 ranked lists; S4 96-row experiment; `results/` CSV+JSON exports |
 | `ccd79cc` | — | (docs) | Plan status updated through S4 |
 
-**Codebase state:** 55/55 unit tests passing (S1–S5 modules); `scripts/` runners and
-`data/` layers stay local per repo policy; every S4/S5 number in `results/` traces to
-its parquet source.
+**Codebase state:** 56/56 unit tests passing (S1–S5 modules); all five dashboard pages
+pass the AppTest smoke check. Full intermediate parquet layers stay under `data/`;
+portable stage reports and review tables are exported under `results/` and `paper/`.
 
 > **Note (dashboard):** the first dashboard implementation (commit `c7db778`) was
 > **reverted from the repo** at team request — reviewed as not intuitive; the file
@@ -118,9 +118,9 @@ with the Backblaze role verdict.
 > (`01_dataset_audit.ipynb`), decision memo, and anomaly register delivered. Key
 > corrections made early: canonical drive key is `(model, disk_id)` (disk_id
 > namespaces repeat across models → 965,495 unique drives); static-deployment
-> exposure model documented (730-day window 2018-01-01→2019-12-31). Backblaze role:
-> recency audit still pending = open team action item (option 2 gating). Tianchi
-> 95044/128972 registered as optional, non-blocking enhancements.
+> exposure model documented (730-day window 2018-01-01→2019-12-31). Backblaze was not
+> audited and is excluded from all claims. Tianchi 95044/128972 remain optional inputs;
+> 95044 is now required only for the incomplete S5 telemetry benchmark.
 
 ---
 
@@ -223,14 +223,19 @@ equal budget? (handover Module 5).
 > **STATUS — ✅ DONE.** `src/drive/evaluation/` (`metrics.py`, `experiment.py`):
 > lift definition fixed once (captured share ÷ budget share); "undefined, not zero"
 > rule for no-failure windows; event counts attached beside every metric. Real
-> experiment (814 s, 4 decision dates × 6 variants × 4 budgets, random = 100 seeds
+> experiment (latest rerun 585.9 s, 4 decision dates × 6 variants × 4 budgets, random = 100 seeds
 > 0..99): **infra-aware best at tight budgets (lift 3.74 @ 5%), multi 30:70 best at
 > 20% (lift 3.02, coverage 60.4%); model-aware weakest of the risk strategies
-> (1.35–2.55); random = 1.00 ± 0.003 (pipeline sanity check); best single cell 6.37×
+> (1.35–2.55); random mean lift = 1.000–1.001 with mean within-date seed SD
+> 0.025–0.054 by budget (100 seeds); best single cell 6.37×
 > (2019-10-01, 5%).** Saved config in `s4_evaluation_report.json`; headline tables
-> published under `results/` (CSV + JSON, commit `7166eb2`). A S4 test caught a real
+> published under `results/` (CSV + JSON). An additional 96-row snapshot-anchored
+> sensitivity run is saved separately; the broad winner by budget is stable, but the
+> 20% multi-factor winner's weight changes from 0.3 to 0.7 and effect sizes decrease.
+> This is a retrospective bound, not a valid decision-time exposure estimate. A S4 test caught a real
 > index-decoupling bug in `build_scores` before it could corrupt results (fixed via
-> identity-preserving left-join). Plots deferred to S6 dashboard; tables ready.
+> identity-preserving left-join). The S6 dashboard and S7 paper bundle now contain
+> result visualisations generated from the saved tables.
 
 ---
 
@@ -285,7 +290,7 @@ protocol** (same decision dates, eligible population, budgets, metrics):
 **Exit condition:** Benchmark matrix completed + one benchmark-results table that will go
 straight into the paper's experiments section.
 
-> **STATUS — ✅ DONE (S5.1 + S5.2).**
+> **STATUS — ⚠️ PARTIAL (S5.1 complete; S5.2 exploratory only).**
 >
 > **S5.1** — `docs/S5_related_work_matrix.md`: 10 verified citations across 8 families
 > (Google FAST'07, Facebook/Meta OSDI'16 + SIGMETRICS'16, Alibaba SYSTOR'16 + FAST'21,
@@ -297,25 +302,31 @@ straight into the paper's experiments section.
 > **S5.2** — `src/drive/benchmarks/` + real benchmark on the 2019-Q4 outcome window
 > (same F_t as S4's t = 2019-10-01 cells), published in `results/s5_benchmark_*`:
 > - Population: 950,212 eligible at t (full) vs 703,292 present in the 2019-12-31
->   SMART snapshot; **only 569 of 3,104 window failures (18.3%) are in the snapshot**
->   (failure-driven id-rotation) → hard oracle ceiling for any SMART-feature method.
-> - Leakage-free SMART-feature evaluation is **structurally impossible** on this
->   dataset (single post-window snapshot); baselines are therefore reported as a
->   **leaky upper-bound benchmark**, never merged into S4 lift claims.
+>   SMART snapshot; 569 of 3,104 failures (18.3%) occur among snapshot-present drives.
+>   This is a selected-population diagnostic, not a general oracle ceiling.
+> - SMART values are dated 2019-12-31, after the failure outcome window (Q4 2019),
+>   so threshold results are post-outcome diagnostics. The ML script additionally
+>   fits and scores on the same failure labels, causing direct target leakage. None
+>   of these S5 scores is a valid held-out predictive benchmark and none belongs in
+>   the paper's performance comparison.
 > - Two baseline bugs caught by cross-checks before results were trusted: (a) the
 >   Backblaze ">0" rule must trip on **raw** counters (normalized n_* use
 >   100=healthy; >0 fires on ~100% of drives); (b) an index-alignment bug made all
 >   baselines select the same arbitrary first-K rows (2/569 coverage) — fixed and
 >   re-run.
-> - Headline: **DRIVE leakage-free infra-aware 7.45× lift @5% (37.3% coverage),
->   multi 30:70 4.75× @5%** on the snapshot population, vs leaky SMART baselines
->   (GBDT 90.3% coverage @5% = leakage artifact, labeled as such); risk tables from
->   full history (restricted master has ZERO pre-t failures — diagnostic-documented).
+> - Snapshot restricted-drive results are not the S4 full-population headline and
+>   must not be conflated with it. Primary paper results are the four-date S4 grid.
 > - ML baselines pooled with model one-hot (per-family training infeasible:
 >   1–50 positives/family), documented deviation from plan wording.
 >
-> **Exit condition met:** benchmark matrix complete + benchmark-results table ready
-> for the paper's experiments section.
+> **Exit condition not met:** the local release contains only a 2019-12-31 snapshot;
+> time-indexed Tianchi 95044 SMART logs and labels are not present in `data/raw/`.
+> Required files, candidate model mapping, validation checks, and a pre-registered
+> temporal protocol are specified in `docs/S5_data_access_and_protocol.md`. The S5
+> runner now refuses to overwrite reports by default; historical invalid diagnostics
+> require explicit `--run-invalid-diagnostics` opt-in. Until the daily source is
+> available and temporal evaluation is executed, omit S5 scores as comparative
+> evidence and retain the stage as partial.
 
 ---
 
@@ -329,19 +340,19 @@ straight into the paper's experiments section.
 - **Page 3 Maintenance Prioritisation:** decision date, strategy, budget, weights,
   ranked/selected drives with per-drive explanations + CSV export.
 - **Page 4 Strategy Comparison:** coverage/precision by budget, lift, random
-  variability, weight comparison, **and the S5 benchmark results**.
+  variability, weight comparison, and a note that S5 comparisons are withheld until a
+  valid temporal benchmark is available.
 - **Page 5 Recommendations:** final maintenance list, high-risk groups, downloadable
   report, caveats + date range.
 - Labels say "historical group risk", never "probability this drive will fail".
 
 **Exit condition:** Every dashboard number traced back to an experiment output file.
 
-> **STATUS — 🚧 BUILT LOCALLY, NOT PUBLISHED.** A first Streamlit version
-> (`dashboard/app.py`, kept on disk, **not pushed** — team decision) implements all
-> five plan pages and passes AppTest verification, but was reviewed as **not
-> intuitive enough**; a simpler, clearer redesign is pending. Dashboard work is
-> deprioritised behind S7 (the draft paper). Requirements for it are commented out
-> in `requirements.txt` until the redesign is published.
+> **STATUS — ✅ IMPLEMENTED AND SMOKE-TESTED.** `dashboard/app.py` contains all five
+> plan pages. Prioritisation and recommendation pages filter the ranked-list parquet
+> to selected rows and required columns instead of materialising all 22.9M ranking
+> rows in memory. All five pages pass `scripts/test_dashboard_pages.py` after installing
+> `requirements-dashboard.txt`.
 
 ---
 
@@ -386,29 +397,35 @@ benchmark-defence questions ("why not deep learning?", "why group risk?").
 **Exit condition:** Complete draft internally reviewed against this checklist; every
 number in the paper traceable to an output file.
 
-> **STATUS — ⬜ NOT STARTED.** Blocked on S5 (Results §6 benchmark table). Headline
-> numbers already available from S4 for the abstract placeholder in §S7.1.1.
+> **STATUS — 🚧 DRAFT PACKAGE BUILT.** `paper/` contains the IEEE LaTeX manuscript,
+> bibliography, primary and sensitivity S4 tables, three generated figures, the compiled
+> PDF, and collaboration/reproducibility notes. Quantitative performance claims use
+> only the primary S4 evaluation; the snapshot-anchored bound is labelled as a
+> retrospective sensitivity. Author names, shared affiliation, and email addresses are
+> now present. Coauthor verification and final scope approval remain. S5 predictive comparison is omitted because the local SMART data is
+> post-outcome and the ML diagnostic is in-sample.
 
 ---
 
-## Current position (as of commit `7166eb2`)
+## Current position (as of latest update)
 
-- **Stages complete:** S0 ✅ → S1 ✅ → S2 ✅ → S3 ✅ → S4 ✅ → S5 ✅. Repo history
-  currently ends at S5 (the first dashboard was reverted from the repo and is kept
-  locally pending a simpler redesign).
-- **Next stage:** S7 draft paper (the critical deliverable — teacher requires a draft
-  paper + Turnitin reports (content similarity + AI plagiarism, via Balakrishna
-  Raju) + good-quality results for final evaluation). Dashboard redesign happens
-  after/alongside the paper.
+- **Stages complete:** S0 ✅ → S1 ✅ → S2 ✅ → S3 ✅ → S4 ✅. S5.1 related-work matrix is
+  complete; S5.2 is diagnostic only because its benchmark design leaks future telemetry
+  and ML target labels.
+- **S6 Dashboard**: Five-page implementation passes the AppTest smoke check; selected
+  ranked-list views use filtered parquet reads.
+- **S7 Research paper draft**: LaTeX collaboration package and compiled PDF are in
+  `paper/`. Figures and result tables are generated from saved S4 outputs; coauthor
+  confirmation of names, order, affiliation, scope, and results remains.
 - **Open team action items:**
-  1. Backblaze recency audit → decides its paper role (S0.3 option 2 = likely drop-or-supplement).
-  2. Optional: Tianchi 95044 registration for daily-SMART exposure upgrade / ML baseline features.
-  3. Turnitin: schedule the plagiarism check once the S7 draft exists (content
-     similarity + AI plagiarism).
-  4. Dashboard redesign: simpler and more intuitive than the first version.
-- **Quality gates maintained:** 49/49 unit tests; raw data untouched; all published
-  numbers reproducible via `scripts/` runners over cached parquet layers; honest-scoping
-  labels ("static-assumption annualized", "undefined" not zero) enforced in code.
+  1. S5: obtain Tianchi 95044 daily SMART and failure-label archives in
+     `data/raw/tianchi_95044/`; follow `docs/S5_data_access_and_protocol.md` and only
+     close the stage after temporal-integrity checks and held-out evaluation.
+  2. Paper: have coauthors verify author spelling/order, affiliation, emails, and final scope; complete literature and manuscript review.
+  3. Optional S0 extension: audit Backblaze SSD recency data before making any cross-era claim.
+- **Quality gates maintained:** 56/56 unit tests pass in this checkout; raw source data
+  untouched; S4 paper values trace to `results/s4_results.csv`. S5 results are labeled
+  invalid diagnostics and excluded from paper performance claims.
 
 ---
 

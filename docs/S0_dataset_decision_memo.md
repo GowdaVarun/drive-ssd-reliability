@@ -1,6 +1,6 @@
 # S0 Dataset Decision Memo — Alibaba (dcbrain) Primary
 
-**Date:** 2026-11-10 · **Stage:** S0 gate (per `DRIVE_Implementation_Plan.md` §S0.3)
+**Date:** 2026-11-21 · **Stage:** S0 gate (per `DRIVE_Implementation_Plan.md` §S0.3)
 **Computed from:** `data/raw/alibaba_core/*.zip` via `scripts/audit_core.py` (reproducible)
 
 ## Verdict
@@ -37,15 +37,17 @@
    (location disks ∪ SMART snapshot disks) − disks failed before t, with the row-vs-drive
    de-duplication first.
 3. **No repeat failures:** under the corrected key there are **no** repeat-event drives
-4. **SMART coverage is a single day** (2019-12-31): fine for S5.2 rule-based baseline
-   (watch-list at decision dates ≤ 2019-12-31 with caution), not usable for time-series
-   features — the Tianchi daily-SMART release remains the optional upgrade for ML baselines.
+4. **SMART coverage in the local primary release is a single day** (2019-12-31), after
+   the Q4 2019 outcome window used for S5. It is not valid for predictive ranking at
+   earlier decision dates. The Tianchi 95044 daily-SMART release is required for a
+   temporally valid S5 baseline; until it is available locally, S5 remains incomplete.
 5. **Terminology freeze (announced):** this dataset uses **rack / node** (plus
    `machine_room_id`); Backblaze (if included) uses pod/vault/cluster/datacenter. Never mixed.
 
 ## Backblaze role (pending separate audit)
 
-Status: **not started**. Recommended next: download Q3 2023 + Q4 2023 quarters only,
-count SSD failure events in the recency window, then pick:
-  (1) full second experiment  (2) recency supplement  (3) drop.
-Decision independent of the Alibaba verdict above.
+Status: **not audited; outside the completed Alibaba-primary experiment**. No Backblaze
+recency results or cross-era claims are included. A follow-up audit needs a bounded
+download (start with Q3 2023 and Q4 2023), SSD failure counts, and infrastructure-field
+coverage before deciding whether to add a second experiment or descriptive supplement.
+This optional track does not change the S0 Alibaba primary verdict.

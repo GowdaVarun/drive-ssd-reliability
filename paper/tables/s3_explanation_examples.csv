@@ -1,0 +1,4 @@
+decision_date,strategy,weights,budget_pct,k,n_eligible,model,disk_id,rack_id,model_risk,infra_risk,combined,model_norm,infra_norm,rank,selected,explanation
+2019-07-01,model,,5,47717,954347,C2,0,21687,6.96557628405e-05,5.70052767641e-06,1,1,,1,True,model C2 historical risk 6.966e-05 (norm 1.000)
+2019-07-01,infra,,5,47717,954347,A3,35691,18670,5.85932100513e-05,0.0029958689754,1,0.831999513705,1,1,True,rack 18670 (A3) historical group risk 2.996e-03 (norm 1.000)
+2019-07-01,multi,0.3,5,47717,954347,A3,35691,18670,5.85932100513e-05,0.0029958689754,0.949599854112,0.831999513705,1,1,True,"multi 30:70 — model A3 risk 5.859e-05 (norm 0.832), rack 18670 risk 2.996e-03 (norm 1.000)"
