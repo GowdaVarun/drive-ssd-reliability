@@ -4,29 +4,22 @@
 \usepackage{url}
 \usepackage{array}
 \usepackage{graphicx}
+\usepackage{placeins}
+\setlength{\textfloatsep}{9pt plus 2pt minus 3pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
 
 \title{Historical Group Risk for Budget-Constrained SSD Maintenance Prioritisation}
 
 \author{
-\IEEEauthorblockN{Sumedh Udupa U}
-\IEEEauthorblockA{Department of Computer Science\\
-R. V. College of Engineering\\Bengaluru-560059, India\\
-sumedhu.cs23@rvce.edu.in}
-\and
-\IEEEauthorblockN{Syed Muzammil Hussaini}
-\IEEEauthorblockA{Department of Computer Science\\
-R. V. College of Engineering\\Bengaluru-560059, India\\
-syedmuzammilh.cs23@rvce.edu.in}
-\and
-\IEEEauthorblockN{Varun Gowda R}
-\IEEEauthorblockA{Department of Computer Science\\
-R. V. College of Engineering\\Bengaluru-560059, India\\
-varungowdar.cs23@rvce.edu.in}
-\and
-\IEEEauthorblockN{Prapulla S. B.}
-\IEEEauthorblockA{Department of Computer Science\\
-R. V. College of Engineering\\Bengaluru-560059, India\\
-prapullasb@rvce.edu.in}
+\begin{tabular}{ccc}
+\begin{tabular}{c}Sumedh Udupa U\\Department of Computer Science\\R. V. College of Engineering\\Bengaluru-560059, India\\sumedhu.cs23@rvce.edu.in\end{tabular} &
+\begin{tabular}{c}Syed Muzammil Hussaini\\Department of Computer Science\\R. V. College of Engineering\\Bengaluru-560059, India\\syedmuzammilh.cs23@rvce.edu.in\end{tabular} &
+\begin{tabular}{c}Varun Gowda R\\Department of Computer Science\\R. V. College of Engineering\\Bengaluru-560059, India\\varungowdar.cs23@rvce.edu.in\end{tabular}
+\end{tabular}\\[1.0em]
+\begin{tabular}{c}
+Prapulla S. B.\\Department of Computer Science\\R. V. College of Engineering\\Bengaluru-560059, India\\prapullasb@rvce.edu.in
+\end{tabular}
 }
 
 \begin{document}
@@ -49,7 +42,7 @@ LightGBM captures 21.6\% of test failures at 5\% capacity (4.32$\times$ lift) an
 63.4\% at 20\% (3.17$\times$), on the same 373,511-drive test cohort as DRIVE.
 These are retrospective ranking results, not individual failure probabilities or
 causal estimates of maintenance benefit. The SMART result is limited to one temporal
-split and six model families; it does not replace the separate full-population S4
+split and six model families; it does not replace the separate full-fleet
 evaluation or establish performance on other fleets.
 \end{abstract}
 
@@ -81,26 +74,27 @@ the reliability of enterprise deployments~\cite{pinheiro2007,maneas2020} and cor
 failures in production SSD racks and nodes~\cite{han2021}. Other work investigates
 telemetry-based failure prediction~\cite{lu2020}; operational SSD studies also examine
 fail-stop and fail-slow behavior~\cite{lu2022}. These studies establish the importance
-of both device signals and infrastructure context. DRIVE addresses a narrower question:
+of both device signals and infrastructure context. Our method addresses a narrower question:
 how historical model- and rack-level rates behave as an explainable ranking when the
 number of selected drives is fixed. We make no priority claim that this is the first
 such method.
 
-\section{Data and Method}
-\subsection{Dataset and Cohort}
+\section{Data and Methods}
+\subsection{Primary Fleet Data and Cohort}
 The analysis uses the Alibaba SSD failure tickets and location records released with
 the production reliability study~\cite{han2021}. Device identity is the pair
 $(\text{model},\text{disk\_id})$, since disk identifiers repeat across model namespaces.
 The primary cohort is reconstructed from the location inventory and failure tags. The
 local SMART file is a separate one-day snapshot; its attribute values are not used to
-build DRIVE scores. The pipeline reports 965,495 unique drives, 18,387 failure events,
-and 11 models over the 2018--2019 observation interval. The main S4 evaluation uses
+build the historical group-risk scores. The records contain 965,495 unique drives,
+18,387 failure events, and 11 models over the 2018--2019 observation interval. The
+full-fleet evaluation uses
 decision dates 2019-01-01, 2019-04-01, 2019-07-01, and 2019-10-01. For each date $t$,
 history uses events strictly before $t$, and outcomes are failures strictly after $t$
 through 2019-12-31. The four outcome windows overlap and are not independent
 replications. Their failure counts are 12,143, 10,124, 7,239, and 3,104, respectively.
 
-\subsection{Historical Group Rates}
+\subsection{Historical Group-Risk Scores}
 For a group with $k$ observed failures and $E$ accumulated drive-days, we use a
 Gamma--Poisson posterior mean shrunk toward a parent rate $\theta_p$:
 \begin{equation}
@@ -115,7 +109,7 @@ strictly before that date.
 Drive-level scores are therefore group rates; they are not calibrated probabilities
 that a particular drive will fail.
 
-\subsection{Ranking Strategies and Budgets}
+\subsection{Ranking Strategies and Capacity Budgets}
 The comparison includes random, model-aware, infrastructure-aware, and multi-factor
 strategies. The multi-factor score is
 \begin{equation}
@@ -130,7 +124,7 @@ that determined their rank. The eligibility rule excludes drives with a known fa
 strictly before $t$; failure-at-$t$ drives remain eligible. All drives in this dataset
 have rack assignments, so every strategy has the same eligible population and $K$.
 
-\subsection{Metrics}
+\subsection{Evaluation Metrics}
 Failure coverage is the fraction of subsequent failures in the selected set. Precision
 is the fraction of selected drives that fail in the outcome window. Lift is coverage
 divided by the selected budget share. For the headline table, each metric is calculated
@@ -143,17 +137,41 @@ The mean random lift is 1.000--1.001 across dates. Mean within-date standard dev
 across the 100 random draws is 0.054, 0.037, 0.031, and 0.025 at 5\%, 10\%, 15\%, and
 20\% budgets, respectively.
 
+\subsection{Separate Temporal SMART Evaluation}
+We also compare DRIVE rankings with the Alibaba Tianchi 95044 daily telemetry release
+for six mapped model families~\cite{xu2021}. The published model crosswalk was checked
+against the primary failure tickets; all 16,305 events in the matched families agree
+by model, drive identifier, and timestamp. The training cohort uses SMART attributes
+recorded on 2019-07-01 and failures in the following quarter (380,907 eligible drives;
+3,550 failed-drive keys across 3,845 events). The held-out cohort uses attributes
+recorded on 2019-10-01 and failures in the next quarter (373,511 eligible drives;
+2,716 failed-drive keys across 2,913 events). All held-out drives join to the primary
+location inventory and rack pool.
+
+The SMART threshold ranks the number of positive raw counters among attributes 5,
+187, 196, 197, and 198. Logistic regression and LightGBM use numeric SMART attributes
+and model indicators. Fifty-six nonempty, nonconstant attributes are selected using
+training features only; imputation, scaling, class weighting, and model fitting use
+training data only. Configuration is fixed before evaluation on the held-out cohort.
+DRIVE scores use failure history strictly before 2019-10-01 and rank the same held-out
+drives. No held-out positive drive key was a training-period failure. Some surviving
+drives occur in both cohorts, so this is a temporal evaluation rather than a
+drive-disjoint split. This comparison does not replace or alter the full-fleet
+evaluation above.
+
 \section{Experimental Results}
+\subsection{Full-Fleet Historical Ranking}
 Table~\ref{tab:headline} reports means across the four decision dates. At 5\%,
 infrastructure-aware selection has the highest lift (3.74$\times$) and covers 18.7\%
-of subsequent failures on average. At 20\%, the multi-factor strategy with $w=0.3$
+of subsequent failures on average. Figure~\ref{fig:full-fleet-coverage} shows coverage
+over all tested budgets: the rack-risk ranking leads at 5\%, while the multi-factor
+strategy with $w=0.3$
 has the highest mean lift among the tested risk rankings (3.02$\times$) and covers
-60.4\%. The model-aware ranking also exceeds random selection at each budget on
-average. The random baseline has mean lift approximately one, as expected under the
+60.4\%. The random baseline has mean lift approximately one, as expected under the
 metric definition.
 
 \begin{table}[t]
-\caption{Mean S4 results over four decision dates. Coverage and precision are fractions.}
+\caption{Mean full-fleet results over four decision dates. Coverage and precision are fractions.}
 \label{tab:headline}
 \centering
 \small
@@ -178,33 +196,18 @@ Multi & 0.3 & 20\% & \textbf{3.02} & \textbf{0.604} \\
 \end{tabular}
 \end{table}
 
-\begin{figure*}[t]
+\begin{figure}[!t]
 \centering
-\includegraphics[width=0.96\textwidth]{figures/study_workflow.png}
-\caption{Chronological workflow. Risk scores are constructed from pre-decision history;
-subsequent failure events are used only for evaluation.}
-\label{fig:workflow}
-\end{figure*}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/s4_coverage_budget.png}
-\caption{Mean failure coverage across four decision dates by maintenance budget.}
-\label{fig:coverage}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/s4_lift_budget.png}
-\caption{Mean lift over random across four decision dates by maintenance budget.}
-\label{fig:lift}
+\includegraphics[width=\linewidth]{figures/full_fleet_coverage.png}
+\caption{Failure coverage across budgets in the full 11-model fleet, averaged over four
+decision dates. All tested historical rankings are shown.}
+\label{fig:full-fleet-coverage}
 \end{figure}
 
 The best strategy depends on capacity: rack-level risk is most effective at the
 tightest evaluated budget, while the multi-factor ranking with greater rack emphasis
-performs best at 20\%. The exact values for all strategies, weights, and budgets are
-included in \texttt{tables/headline\_results.csv}; the complete 96-row output is included in
-\texttt{tables/s4\_results.csv}.
+performs best at 20\%. The supplementary full-fleet result table contains the complete
+strategy-by-budget grid.
 
 We also reran the complete grid under a snapshot-anchored exposure bound. In this
 sensitivity analysis, drives absent from the final SMART snapshot contribute zero
@@ -235,35 +238,18 @@ Budget & Primary winner & Lift & Coverage & Sensitivity winner & Lift & Coverage
 \end{tabular}
 \end{table*}
 
-\subsection{Temporal SMART Benchmark (S5)}
-We use the separate Alibaba daily SMART release for six model families~\cite{xu2021}.
-The published crosswalk was validated against the primary failure tickets: all 16,305
-failure events match exactly by model, disk ID, and timestamp. The training cohort uses
-the 2019-07-01 snapshot (380,907 eligible drives; 3,550 failed-drive keys in 3,845
-failure events from (2019-07-01, 2019-10-01)). The test cohort uses 2019-10-01 SMART
-features (373,511 eligible drives; 2,716 failed-drive keys in 2,913 events from
-(2019-10-01, 2020-01-01)). All test drives join the primary inventory and rack pool.
-
-The SMART threshold ranks the count of positive raw counters among attributes 5, 187,
-196, 197, and 198. Logistic regression and LightGBM use the 102 numeric SMART
-attributes plus model indicators; 56 nonempty, nonconstant attributes are selected
-using July training features only. Imputation, scaling, class weighting, and model
-fitting use only the July cohort and labels. No test labels are used to choose features
-or model settings. DRIVE's historical group risks use primary failure history strictly
-before 2019-10-01 and are ranked on the same October test cohort. The test-positive
-drive keys do not overlap training-positive keys. Surviving drives can occur in both
-time cohorts, so this is a temporal forecast evaluation rather than an independent-drive
-holdout.
-
-Table~\ref{tab:s5} reports selected budgets. LightGBM has the highest coverage at both
-endpoints; DRIVE's infrastructure ranking remains competitive, especially at 20\%.
-The random intervals describe variability across 100 selection seeds, not uncertainty
-across fleets or years. The full table, random draws, input audit, and per-drive ranks
-are included in the paper package and project results.
+\subsection{Temporal Telemetry Comparison}
+Table~\ref{tab:telemetry} summarizes selected capacity budgets on the matched temporal
+cohort. LightGBM has the highest coverage at both reported budgets. DRIVE's
+infrastructure ranking is below LightGBM in this telemetry comparison, although it
+captures 58.25\% of held-out failures at 20\% capacity. Random intervals describe
+variation across 100 selection seeds, not uncertainty across fleets or years. This
+result is limited to one historical split and six model families. Figure~\ref{fig:temporal-smart-coverage}
+shows coverage across all four budgets for every evaluated ranking.
 
 \begin{table*}[t]
-\caption{S5 metrics on the six-family October temporal test cohort (373,511 eligible drives; 2,716 failed drives). Random intervals are empirical 2.5th--97.5th seed percentiles.}
-\label{tab:s5}
+\caption{Metrics on the six-family October temporal test cohort (373,511 eligible drives; 2,716 failed drives). Random intervals are empirical 2.5th--97.5th seed percentiles.}
+\label{tab:telemetry}
 \centering
 \small
 \begin{tabular}{lrrrr}
@@ -276,18 +262,21 @@ Logistic regression & 19.26\% & 3.851 & 57.92\% & 2.896 \\
 LightGBM & 21.58\% & 4.315 & 63.40\% & 3.170 \\
 DRIVE model & 3.57\% & 0.714 & 31.11\% & 1.556 \\
 DRIVE infrastructure & 16.02\% & 3.203 & 58.25\% & 2.912 \\
+DRIVE multi ($w=0.7$) & 5.41\% & 1.083 & 53.65\% & 2.682 \\
+DRIVE multi ($w=0.5$) & 11.52\% & 2.305 & 53.76\% & 2.688 \\
 DRIVE multi ($w=0.3$) & 14.95\% & 2.990 & 53.28\% & 2.664 \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-\begin{figure*}[t]
+\begin{figure}[!t]
 \centering
-\includegraphics[width=0.92\textwidth]{figures/s5_temporal_coverage.png}
-\caption{Held-out S5 failure coverage at equal maintenance budgets on the six-family
-cohort. The random bars show 2.5th--97.5th percentiles over 100 selection seeds.}
-\label{fig:s5-coverage}
-\end{figure*}
+\includegraphics[width=\linewidth]{figures/temporal_smart_coverage.png}
+\caption{Failure coverage versus capacity in the six-family temporal SMART holdout.
+All SMART and DRIVE rankings are shown. Error bars on random selection are the
+2.5th--97.5th percentiles across 100 seeds; they describe seed variability only.}
+\label{fig:temporal-smart-coverage}
+\end{figure}
 
 \subsection{Illustrative Selection Explanation}
 At the 2019-07-01 decision date and 5\% budget, the highest-ranked rack example is
@@ -313,12 +302,11 @@ Multi $w=0.3$ & A3 / 35691 & Model $5.859\times10^{-5}$ (norm 0.832); rack $2.99
 \end{table}
 
 \section{Discussion}
-The S4 results show that rack history is useful at tight capacity and that the
-multi-factor ranking performs well at larger budgets. In the separate S5 temporal
-cohort, LightGBM captures more test failures than DRIVE at every tested budget, while
-DRIVE infrastructure ranking remains close at the largest budget (58.25\% versus
-63.40\% coverage at 20\%). These are results from one historical split on six model
-families, not evidence of statistical superiority across fleets or years. Neither
+On the full fleet, rack history is most useful at tight capacity, while the multi-factor
+ranking with greater rack emphasis performs best among the tested historical rankings
+at 20\%. In the separate telemetry cohort, LightGBM captures more test failures than
+DRIVE at both reported budgets. These results come from one historical split on six
+model families, not evidence of broad superiority across fleets or years. Neither
 ranking establishes that maintenance based on its list prevents failures, reduces
 cost, or improves future fleet reliability.
 
@@ -328,12 +316,13 @@ drives sharing a group receive similar group-risk signals. The score should be u
 for prioritisation or investigation, not as an individual failure probability.
 
 \section{Limitations and Future Work}
-First, the study is retrospective and uses one operator dataset from 2018--2019. S5
-contains one temporal split and six mapped model families; 351,144 drive keys appear
+First, the study is retrospective and uses one operator's records from 2018--2019. The
+telemetry comparison contains one temporal split and six mapped model families; 351,144 drive keys appear
 in both eligible time cohorts, so the results do not represent an independent-drive
 holdout. Second, failure-table absence is treated as no recorded failure in the window,
-not proof of health, and unrecorded removals can affect labels. Third, S5's
-class-weighted ranking scores are not calibrated probabilities. Fourth, the DRIVE rate
+not proof of health, and unrecorded removals can affect labels. Third, the telemetry
+models' class-weighted ranking scores are not calibrated probabilities. Fourth, the
+historical group-rate
 estimator assumes static exposure over parts of the observation period; reported rates
 are not calibrated time-varying hazards. Fifth, results depend on group definitions,
 smoothing strength, and the tested multi-factor weights. Maintenance costs and
@@ -341,12 +330,13 @@ intervention outcomes are absent, so budgets represent drive-count capacity rath
 than monetary cost. Evaluation on additional fleets and periods, improved censoring
 information, and intervention studies remain future work.
 
+\FloatBarrier
 \section{Conclusion}
 We compared chronological model-, rack-, and multi-factor historical group-risk
 rankings under equal drive-count budgets and evaluated them separately against SMART
-methods on a common six-family temporal cohort. S4 shows a 3.74$\times$ mean lift for
-rack-aware selection at 5\% and a 3.02$\times$ mean lift for the $w=0.3$ multi-factor
-ranking at 20\%. On S5, LightGBM captures 21.58\% of test failures at 5\% and 63.40\%
+methods on a common six-family temporal cohort. In the full 11-model fleet, rack-aware
+selection achieves a 3.74$\times$ mean lift at 5\%, while the $w=0.3$ multi-factor
+ranking achieves a 3.02$\times$ mean lift at 20\%. On the telemetry cohort, LightGBM captures 21.58\% of test failures at 5\% and 63.40\%
 at 20\%, while DRIVE infrastructure selection captures 16.02\% and 58.25\%,
 respectively. These results support transparent group-risk ranking as a decision aid,
 while showing that telemetry can improve selection in the tested subset. They do not

@@ -1,13 +1,11 @@
-# Figures
+# Manuscript figures
 
-- `study_workflow.png` — chronological decision and evaluation workflow.
-- `s4_coverage_budget.png` — mean failure coverage by budget for all evaluated
-  strategies.
-- `s4_lift_budget.png` — mean lift by budget for all evaluated strategies.
-- `s5_temporal_coverage.png` — held-out coverage by budget for the valid six-family
-  temporal SMART benchmark; random intervals are 100-seed percentiles.
+- `full_fleet_coverage.png` — failure-coverage curves across all four capacity budgets
+  and every historical ranking, averaged over four decision dates.
+- `temporal_smart_coverage.png` — failure-coverage curves across all four budgets for
+  all SMART and DRIVE rankings in the separate temporal holdout. Random seed intervals
+  are included.
 
-The S4 charts are generated from `../tables/s4_results.csv`; the S5 chart uses
-`../tables/s5_temporal_results.csv`. Run `../scripts/build_figures.py` to refresh them.
-S4 aggregates four decision dates, while S5 shows its separate single temporal holdout.
-The invalid legacy S5 diagnostics are excluded.
+Regenerate both figures from `../tables/s4_results.csv` and
+`../tables/s5_temporal_results.csv` with `python ../scripts/build_figures.py`. These
+figures show distinct cohorts and must not be interpreted as a pooled comparison.
